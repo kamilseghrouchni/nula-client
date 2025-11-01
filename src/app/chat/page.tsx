@@ -163,6 +163,28 @@ export default function ChatPage() {
     }
   };
 
+  const handlePlanBuild = (planId: string) => {
+    // Find the plan by ID
+    const plan = plans.find(p => p.id === planId);
+    if (!plan || status !== 'ready') return;
+
+    // Send plan content as a build request
+    const buildMessage = `Please build this plan:\n\n${plan.content}`;
+    sendMessage({ text: buildMessage });
+    setInput('');
+    setSuggestedFollowup(null);
+  };
+
+  const handlePlanBuildFromContent = (content: string) => {
+    if (status !== 'ready') return;
+
+    // Send plan content as a build request
+    const buildMessage = `Please build this plan:\n\n${content}`;
+    sendMessage({ text: buildMessage });
+    setInput('');
+    setSuggestedFollowup(null);
+  };
+
   // Determine if right panel should be shown
   const hasArtifacts = artifacts.length > 0;
   const hasPlans = plans.length > 0;
@@ -295,6 +317,7 @@ export default function ChatPage() {
                   key={message.id}
                   message={message}
                   isStreaming={status === 'streaming' && idx === messages.length - 1}
+                  onPlanBuild={handlePlanBuildFromContent}
                 />
               ))}
 
@@ -364,6 +387,7 @@ export default function ChatPage() {
             hasPlans={hasPlans}
             initialTab={hasPlans ? "plans" : hasArtifacts ? "notebook" : "workflow"}
             onClose={() => setRightPanelOpen(false)}
+            onPlanBuild={handlePlanBuild}
           />
         </div>
       )}

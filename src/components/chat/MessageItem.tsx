@@ -25,6 +25,7 @@ import { PlanPreview } from './PlanPreview';
 interface MessageItemProps {
   message: UIMessage;
   isStreaming?: boolean;
+  onPlanBuild?: (content: string) => void;
 }
 
 type ThinkingStep = {
@@ -33,7 +34,7 @@ type ThinkingStep = {
   index: number;
 };
 
-export const MessageItem = memo(function MessageItem({ message, isStreaming = false }: MessageItemProps) {
+export const MessageItem = memo(function MessageItem({ message, isStreaming = false, onPlanBuild }: MessageItemProps) {
   const isUser = message.role === 'user';
 
   // Handle user messages - simple display, no thinking/reasoning
@@ -347,6 +348,7 @@ export const MessageItem = memo(function MessageItem({ message, isStreaming = fa
                 description={plan.description}
                 content={plan.content}
                 isStreaming={isStreaming}
+                onBuild={() => onPlanBuild?.(plan.content)}
               />
             ))}
           </div>

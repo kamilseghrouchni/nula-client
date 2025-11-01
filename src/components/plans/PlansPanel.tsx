@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import {
   Plan,
@@ -9,7 +10,10 @@ import {
   PlanDescription,
   PlanTrigger,
   PlanContent,
+  PlanFooter,
+  PlanAction,
 } from "@/components/ai-elements/plan";
+import { Button } from "@/components/ui/button";
 import type { Plan as PlanType } from "@/lib/types";
 import { FileText, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -17,11 +21,44 @@ import { Badge } from "@/components/ui/badge";
 interface PlansPanelProps {
   plans: PlanType[];
   onClose?: () => void;
+  onBuild?: (planId: string) => void;
 }
 
-export function PlansPanel({ plans, onClose }: PlansPanelProps) {
+export function PlansPanel({ plans, onClose, onBuild }: PlansPanelProps) {
+  const handleBuild = (planId: string) => {
+    if (onBuild) {
+      onBuild(planId);
+    }
+  };
+
+  const handleClear = (planId: string) => {
+    // Clear functionality - for now just log it
+    // This could be expanded to clear the plan from state
+    console.log('[Plans] Clear plan:', planId);
+  };
+
   const isEmpty = plans.length === 0;
   const planCount = plans.length;
+
+  // Keyboard shortcut handler for Cmd+Enter
+  // Only trigger for the most recent plan (last in array)
+  useEffect(() => {
+    if (!onBuild || plans.length === 0) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Check for Cmd+Enter (Mac) or Ctrl+Enter (Windows/Linux)
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        const latestPlan = plans[plans.length - 1];
+        console.log('[PlansPanel] Cmd+Enter triggered for plan:', latestPlan.id);
+        handleBuild(latestPlan.id);
+      }
+    };
+
+    // Add listener to document so it works globally
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onBuild, plans, handleBuild]);
 
   return (
     <div className="h-full flex flex-col bg-background">
@@ -93,6 +130,16 @@ export function PlansPanel({ plans, onClose }: PlansPanelProps) {
                     <ReactMarkdown>{plan.content}</ReactMarkdown>
                   </div>
                 </PlanContent>
+                <PlanFooter>
+                  <PlanAction>
+                    <Button size="sm" variant="secondary" onClick={() => handleClear(plan.id)}>
+                      Clear
+                    </Button>
+                    <Button size="sm" onClick={() => handleBuild(plan.id)}>
+                      Build <kbd className="ml-1.5 font-mono text-xs">⌘↩</kbd>
+                    </Button>
+                  </PlanAction>
+                </PlanFooter>
               </Plan>
             </PlanCard>
           ))}

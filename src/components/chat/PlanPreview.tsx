@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import {
   Plan,
@@ -9,13 +10,18 @@ import {
   PlanDescription,
   PlanTrigger,
   PlanContent,
+  PlanFooter,
+  PlanAction,
 } from "@/components/ai-elements/plan";
+import { Button } from "@/components/ui/button";
 
 interface PlanPreviewProps {
   title: string;
   description?: string;
   content: string;
   isStreaming?: boolean;
+  onBuild?: () => void;
+  onClear?: () => void;
 }
 
 export function PlanPreview({
@@ -23,9 +29,44 @@ export function PlanPreview({
   description,
   content,
   isStreaming = false,
+  onBuild,
+  onClear,
 }: PlanPreviewProps) {
   // Format content for display (first 3-5 lines or sections)
   const previewContent = formatPreviewContent(content);
+
+  const handleBuild = () => {
+    if (onBuild) {
+      onBuild();
+    }
+  };
+
+  const handleClear = () => {
+    if (onClear) {
+      onClear();
+    } else {
+      // Default: just log it
+      console.log('[PlanPreview] Clear clicked');
+    }
+  };
+
+  // Keyboard shortcut handler for Cmd+Enter
+  useEffect(() => {
+    if (!onBuild) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Check for Cmd+Enter (Mac) or Ctrl+Enter (Windows/Linux)
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        console.log('[PlanPreview] Cmd+Enter triggered');
+        handleBuild();
+      }
+    };
+
+    // Add listener to document so it works globally
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onBuild, handleBuild]);
 
   return (
     <div className="my-4 not-prose">
@@ -61,6 +102,18 @@ export function PlanPreview({
               </div>
             </div>
           </PlanContent>
+          {onBuild && (
+            <PlanFooter>
+              <PlanAction>
+                <Button size="sm" variant="secondary" onClick={handleClear}>
+                  Clear
+                </Button>
+                <Button size="sm" onClick={handleBuild}>
+                  Build <kbd className="ml-1.5 font-mono text-xs">⌘↩</kbd>
+                </Button>
+              </PlanAction>
+            </PlanFooter>
+          )}
         </Plan>
       </PlanCard>
     </div>

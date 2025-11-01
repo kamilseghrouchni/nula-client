@@ -19,6 +19,7 @@ interface RightPanelProps {
   hasPlans: boolean;
   initialTab?: Tab;
   onClose?: () => void;
+  onPlanBuild?: (planId: string) => void;
 }
 
 export function RightPanel({
@@ -30,6 +31,7 @@ export function RightPanel({
   hasPlans,
   initialTab = "workflow",
   onClose,
+  onPlanBuild,
 }: RightPanelProps) {
   const [activeTab, setActiveTab] = useState<Tab>(initialTab);
 
@@ -45,7 +47,7 @@ export function RightPanel({
       return <LabNotebook artifacts={artifacts} />;
     }
     if (hasPlans) {
-      return <PlansPanel plans={plans} onClose={onClose} />;
+      return <PlansPanel plans={plans} onClose={onClose} onBuild={onPlanBuild} />;
     }
   }
 
@@ -101,7 +103,7 @@ export function RightPanel({
 
       {/* Tab Content */}
       <div className="flex-1 overflow-hidden">
-        {activeTab === "plans" && <PlansPanel plans={plans} />}
+        {activeTab === "plans" && <PlansPanel plans={plans} onBuild={onPlanBuild} />}
         {activeTab === "workflow" && <WorkflowPanel messages={messages} />}
         {activeTab === "notebook" && <LabNotebook artifacts={artifacts} />}
       </div>
