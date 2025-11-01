@@ -54,7 +54,7 @@ export const PlanHeader = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <CardHeader
     ref={ref}
-    className={cn("flex-row items-start justify-between space-y-0", className)}
+    className={cn("flex-row items-start justify-between space-y-0 px-6 py-5", className)}
     {...props}
   />
 ));
@@ -142,7 +142,7 @@ export const PlanContent = React.forwardRef<
   React.ComponentProps<typeof CardContent>
 >(({ className, ...props }, ref) => (
   <CollapsibleContent>
-    <CardContent ref={ref} className={className} {...props} />
+    <CardContent ref={ref} className={cn("px-6 py-5", className)} {...props} />
   </CollapsibleContent>
 ));
 PlanContent.displayName = "PlanContent";

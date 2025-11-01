@@ -42,10 +42,22 @@ export function PlanPreview({
             <PlanTrigger />
           </PlanHeader>
           <PlanContent>
-            <div className="prose prose-sm dark:prose-invert max-w-none prose-headings:font-semibold prose-h2:text-lg prose-h2:mt-6 prose-h2:mb-3 prose-h3:text-base prose-h3:mt-4 prose-h3:mb-2 prose-p:text-sm prose-p:leading-relaxed prose-ul:text-sm prose-ol:text-sm prose-li:my-1 prose-strong:font-semibold prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-code:before:content-none prose-code:after:content-none">
+            <div className="prose prose-sm dark:prose-invert max-w-none
+              prose-headings:font-bold prose-headings:tracking-tight
+              prose-h1:text-2xl prose-h1:mt-8 prose-h1:mb-4 prose-h1:text-primary prose-h1:border-b prose-h1:border-border prose-h1:pb-2
+              prose-h2:text-xl prose-h2:mt-8 prose-h2:mb-4 prose-h2:text-foreground
+              prose-h3:text-lg prose-h3:mt-6 prose-h3:mb-3 prose-h3:text-foreground
+              prose-p:text-sm prose-p:leading-7 prose-p:my-4 prose-p:text-muted-foreground
+              prose-ul:my-4 prose-ul:space-y-2
+              prose-ol:my-4 prose-ol:space-y-2
+              prose-li:text-sm prose-li:leading-7 prose-li:text-foreground prose-li:my-1.5
+              prose-strong:font-bold prose-strong:text-foreground
+              prose-code:bg-muted prose-code:text-primary prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-code:font-mono prose-code:before:content-none prose-code:after:content-none
+              prose-pre:bg-muted prose-pre:border prose-pre:border-border
+              [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6">
               <ReactMarkdown>{previewContent}</ReactMarkdown>
-              <div className="mt-4 pt-3 border-t border-border text-xs text-muted-foreground italic">
-                See full plan in the Plans panel
+              <div className="mt-6 pt-4 border-t border-border text-xs text-muted-foreground italic">
+                Click "Plans" tab to see full details →
               </div>
             </div>
           </PlanContent>

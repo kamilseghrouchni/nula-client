@@ -1,7 +1,6 @@
 "use client";
 
 import ReactMarkdown from "react-markdown";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Plan,
   PlanCard,
@@ -42,53 +41,63 @@ export function PlansPanel({ plans, onClose }: PlansPanelProps) {
       </div>
 
       {/* Content */}
-      <ScrollArea className="flex-1">
-        {isEmpty ? (
-          // Empty state
-          <div className="flex flex-col items-center justify-center h-full text-center p-6">
-            <FileText className="text-muted-foreground mb-4" size={48} />
-            <h3 className="text-lg font-semibold mb-2">No Plans Yet</h3>
-            <p className="text-sm text-muted-foreground max-w-sm">
-              When you ask for a plan or strategy, it will appear here with all
-              the details.
-            </p>
-          </div>
-        ) : (
-          // Plans list
-          <div className="p-4 space-y-4">
-            {plans.map((plan, idx) => (
-              <PlanCard key={plan.id}>
-                <Plan defaultOpen={idx === plans.length - 1}>
-                  <PlanHeader>
-                    <div className="flex-1 min-w-0 space-y-1">
-                      <div className="flex items-center gap-2">
-                        <PlanTitle>{plan.title}</PlanTitle>
-                        {plan.isStreaming && (
-                          <Badge variant="outline" className="text-xs">
-                            <span className="animate-pulse">Generating...</span>
-                          </Badge>
-                        )}
-                      </div>
-                      {plan.description && (
-                        <PlanDescription>{plan.description}</PlanDescription>
+      {isEmpty ? (
+        // Empty state
+        <div className="flex flex-col items-center justify-center flex-1 text-center p-6">
+          <FileText className="text-muted-foreground mb-4" size={48} />
+          <h3 className="text-lg font-semibold mb-2">No Plans Yet</h3>
+          <p className="text-sm text-muted-foreground max-w-sm">
+            When you ask for a plan or strategy, it will appear here with all
+            the details.
+          </p>
+        </div>
+      ) : (
+        // Plans list
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hidden">
+          {plans.map((plan, idx) => (
+            <PlanCard key={plan.id}>
+              <Plan defaultOpen={idx === plans.length - 1}>
+                <PlanHeader>
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <PlanTitle>{plan.title}</PlanTitle>
+                      {plan.isStreaming && (
+                        <Badge variant="outline" className="text-xs">
+                          <span className="animate-pulse">Generating...</span>
+                        </Badge>
                       )}
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(plan.timestamp).toLocaleString()}
-                      </p>
                     </div>
-                    <PlanTrigger />
-                  </PlanHeader>
-                  <PlanContent>
-                    <div className="prose prose-sm dark:prose-invert max-w-none prose-headings:font-semibold prose-h2:text-lg prose-h2:mt-6 prose-h2:mb-3 prose-h3:text-base prose-h3:mt-4 prose-h3:mb-2 prose-p:text-sm prose-p:leading-relaxed prose-ul:text-sm prose-ol:text-sm prose-li:my-1 prose-strong:font-semibold prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-code:before:content-none prose-code:after:content-none">
-                      <ReactMarkdown>{plan.content}</ReactMarkdown>
-                    </div>
-                  </PlanContent>
-                </Plan>
-              </PlanCard>
-            ))}
-          </div>
-        )}
-      </ScrollArea>
+                    {plan.description && (
+                      <PlanDescription>{plan.description}</PlanDescription>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(plan.timestamp).toLocaleString()}
+                    </p>
+                  </div>
+                  <PlanTrigger />
+                </PlanHeader>
+                <PlanContent>
+                  <div className="prose prose-sm dark:prose-invert max-w-none
+                    prose-headings:font-bold prose-headings:tracking-tight
+                    prose-h1:text-2xl prose-h1:mt-8 prose-h1:mb-4 prose-h1:text-primary prose-h1:border-b prose-h1:border-border prose-h1:pb-2
+                    prose-h2:text-xl prose-h2:mt-8 prose-h2:mb-4 prose-h2:text-foreground
+                    prose-h3:text-lg prose-h3:mt-6 prose-h3:mb-3 prose-h3:text-foreground
+                    prose-p:text-sm prose-p:leading-7 prose-p:my-4 prose-p:text-muted-foreground
+                    prose-ul:my-4 prose-ul:space-y-2
+                    prose-ol:my-4 prose-ol:space-y-2
+                    prose-li:text-sm prose-li:leading-7 prose-li:text-foreground prose-li:my-1.5
+                    prose-strong:font-bold prose-strong:text-foreground
+                    prose-code:bg-muted prose-code:text-primary prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-code:font-mono prose-code:before:content-none prose-code:after:content-none
+                    prose-pre:bg-muted prose-pre:border prose-pre:border-border
+                    [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6">
+                    <ReactMarkdown>{plan.content}</ReactMarkdown>
+                  </div>
+                </PlanContent>
+              </Plan>
+            </PlanCard>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
