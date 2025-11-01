@@ -20,10 +20,12 @@ import { ChevronDownIcon, AlertCircle, Loader2, BrainIcon } from 'lucide-react';
 import { useMemo, memo } from 'react';
 import { cn } from '@/lib/utils';
 import { removeFollowupFromText } from '@/lib/utils/followup';
+import { PlanPreview } from './PlanPreview';
 
 interface MessageItemProps {
   message: UIMessage;
   isStreaming?: boolean;
+  onPlanBuild?: (content: string) => void;
 }
 
 type ThinkingStep = {
@@ -32,7 +34,7 @@ type ThinkingStep = {
   index: number;
 };
 
-export const MessageItem = memo(function MessageItem({ message, isStreaming = false }: MessageItemProps) {
+export const MessageItem = memo(function MessageItem({ message, isStreaming = false, onPlanBuild }: MessageItemProps) {
   const isUser = message.role === 'user';
 
   // Handle user messages - simple display, no thinking/reasoning
@@ -87,9 +89,10 @@ export const MessageItem = memo(function MessageItem({ message, isStreaming = fa
 
   // Process parts to separate intermediate reasoning from final response
   // Show ALL intermediate thinking steps between tools
-  const { thinkingSteps, finalText } = useMemo(() => {
+  const { thinkingSteps, finalText, planPreviews } = useMemo(() => {
     const steps: ThinkingStep[] = [];
     let final = '';
+    const plans: Array<{ title: string; description?: string; content: string }> = [];
 
     // First pass: find the index of the last tool
     let lastToolIndex = -1;
@@ -106,11 +109,24 @@ export const MessageItem = memo(function MessageItem({ message, isStreaming = fa
       if (part.type === 'text') {
         let text = part.text || '';
 
+        // Extract plan tags before removing them
+        const planTagRegex = /<plan(?:\s+title="([^"]*)")?(?:\s+description="([^"]*)")?\s*>([\s\S]*?)<\/plan>/g;
+        const planMatches: RegExpMatchArray[] = Array.from(text.matchAll(planTagRegex));
+        planMatches.forEach((match) => {
+          const title = match[1] || 'Plan';
+          const description = match[2] || undefined;
+          const content = match[3]?.trim() || '';
+          plans.push({ title, description, content });
+        });
+
         // Remove code blocks (they render in notebook)
         text = text.replace(/```(?:jsx|javascript|tsx|js|typescript|ts)[\s\n]([\s\S]*?)```/g, '');
 
         // Remove artifact tags (they render in notebook)
         text = text.replace(/<artifact[^>]*>[\s\S]*?<\/artifact>/g, '');
+
+        // Remove plan tags (they render as preview)
+        text = text.replace(/<plan[^>]*>[\s\S]*?<\/plan>/g, '');
 
         // Remove follow-up question delimiter and text (it shows in input box)
         text = removeFollowupFromText(text);
@@ -192,6 +208,7 @@ export const MessageItem = memo(function MessageItem({ message, isStreaming = fa
     return {
       thinkingSteps: steps,
       finalText: final,
+      planPreviews: plans,
     };
   }, [message.parts]);
 
@@ -318,6 +335,22 @@ export const MessageItem = memo(function MessageItem({ message, isStreaming = fa
                 })}
               </TaskContent>
             </Task>
+          </div>
+        )}
+
+        {/* Plan Previews - Show inline collapsed plan cards */}
+        {planPreviews.length > 0 && (
+          <div className="space-y-4">
+            {planPreviews.map((plan, idx) => (
+              <PlanPreview
+                key={`plan-preview-${message.id}-${idx}`}
+                title={plan.title}
+                description={plan.description}
+                content={plan.content}
+                isStreaming={isStreaming}
+                onBuild={() => onPlanBuild?.(plan.content)}
+              />
+            ))}
           </div>
         )}
 

@@ -24,7 +24,7 @@ export async function POST(request: Request) {
   try {
     const json = await request.json();
     const { messages } = json as { messages: UIMessage[] };
-    
+
     // Initialize MCP client
     if (!mcpClient) {
       const config = loadMCPConfig();
@@ -224,13 +224,13 @@ ${contextPrompt ? '\n\nREMINDER: Check the "Session Data Context" section above 
     });
 
     return createUIMessageStreamResponse({ stream });
-    
+
   } catch (error: any) {
     console.error('\n[ERROR]:', error.message);
     console.error('[STACK]:', error.stack);
-    
-    return new Response(JSON.stringify({ 
-      error: error.message || "An error occurred" 
+
+    return new Response(JSON.stringify({
+      error: error.message || "An error occurred"
     }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },

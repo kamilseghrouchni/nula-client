@@ -24,3 +24,14 @@ export interface Message {
     content: string;
     title?: string;
   }
+
+  export interface Plan {
+    id: string;
+    title: string;
+    description?: string;
+    content: string;
+    messageId: string;
+    messageIndex: number;
+    timestamp: number;
+    isStreaming?: boolean;
+  }

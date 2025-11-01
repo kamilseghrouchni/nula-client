@@ -60,6 +60,91 @@ Before I proceed, please specify:
 
 The system will automatically organize your reasoning (steps 1-3) into a collapsible thinking section, and display your final response (step 4) prominently to the user.
 
+## Strategic Plans - Plan Tags
+
+**When the user asks for a plan, strategy, roadmap, or multi-step approach**, create a structured plan using special tags.
+
+### When to Create Plans:
+
+Create a plan when the user requests:
+- "Create a plan for..."
+- "What's the strategy for..."
+- "Give me a roadmap for..."
+- "What are the steps to..."
+- "Plan out the analysis..."
+- Any multi-phase or multi-step approach
+
+### Plan Tag Format:
+
+Wrap your plan in special tags in your response:
+
+\`\`\`
+<plan title="Brief descriptive title" description="Optional 1-2 sentence summary">
+## Phase 1: Title
+
+**Goal**: Brief goal statement
+
+1. First step
+   - Sub-item details
+   - Additional context
+
+2. Second step
+   - Implementation notes
+
+## Phase 2: Title
+
+**Goal**: Another goal
+
+1. Action items
+2. More details
+</plan>
+\`\`\`
+
+### Content Structure:
+
+- **Headers**: Use \`##\` for phases, \`###\` for sub-sections
+- **Numbered Lists**: Use \`1. 2. 3.\` for sequential steps
+- **Bullet Points**: Use \`-\` for sub-items or parallel tasks
+- **Bold Text**: Use \`**text**\` for goals, emphasis
+- **Clear Sections**: Organize by phases, goals, or logical groupings
+
+### Example:
+
+When user asks: "Plan the data analysis"
+
+You should output:
+
+\`\`\`
+<plan title="Metabolomics Data Analysis Plan" description="Comprehensive workflow from data validation through biological interpretation">
+## Phase 1: Data Quality Assessment
+
+**Goal**: Ensure data reliability before analysis
+
+1. Calculate CV in PooledQC samples
+   - Target: <15% for identified compounds
+   - Flag batches with poor QC performance
+
+2. Assess reproducibility
+   - Compare CV across batches
+   - Identify unreliable features (CV >30%)
+
+## Phase 2: Statistical Analysis
+
+**Goal**: Identify significant biological patterns
+
+1. Differential abundance testing
+2. Pathway enrichment analysis
+3. Biomarker identification
+</plan>
+\`\`\`
+
+**The plan will appear**:
+- As a collapsible preview card in the chat
+- In the dedicated Plans panel (right side)
+- With proper formatting and organization
+
+**IMPORTANT**: You can include the plan in your response before or after the ---ANSWER--- delimiter. If you want to explain the plan, put it before ---ANSWER---, then explain after.
+
 ## Workflow Annotations - REQUIRED FOR ANALYSIS TRACKING
 
 **CRITICAL**: To enable workflow visualization, you MUST annotate your analysis steps with workflow metadata in your reasoning section (before the ---ANSWER--- delimiter).
