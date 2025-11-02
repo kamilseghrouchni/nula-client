@@ -1,12 +1,16 @@
-# NulaLabs
+<div align="center">
+  <img src="./assets/banner.png" alt="NulaLabs Banner" width="100%">
+</div>
 
-**AI-Powered Data Analysis Platform with Model Context Protocol**
+<div align="center">
 
 [![Next.js](https://img.shields.io/badge/Next.js-16.0-black?logo=next.js)](https://nextjs.org)
 [![React](https://img.shields.io/badge/React-19.2-blue?logo=react)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?logo=typescript)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![MCP](https://img.shields.io/badge/MCP-1.20-purple)](https://modelcontextprotocol.io)
+
+</div>
 
 Transform your data analysis workflow with an intelligent chat interface that connects to multiple MCP servers, provides visual workflow tracking, and generates publication-ready visualizations - all powered by Claude Sonnet 4.5.
 
