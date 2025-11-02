@@ -119,7 +119,7 @@ ${contextPrompt ? '\n\nREMINDER: Check the "Session Data Context" section above 
         }
 
         const result = streamText({
-          model: anthropic('claude-haiku-4-5'),
+          model: anthropic('claude-sonnet-4-5'),
           messages: messagesWithCaching,
           tools,
           stopWhen: stepCountIs(25),

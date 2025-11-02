@@ -12,7 +12,7 @@ import { Suggestion, Suggestions } from '@/components/ai-elements/elements/sugge
 import { suggestions } from '@/lib/data/suggestions';
 import { extractFollowupQuestion } from '@/lib/utils/followup';
 import { extractPlans } from '@/lib/utils/extractPlans';
-import { Send, Loader2, Network, Sparkles } from 'lucide-react';
+import { Send, Loader2, Network, Sparkles, FlaskConical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { RightPanel } from '@/components/RightPanel';
 import { HiddenArtifactPool } from '@/components/artifact/HiddenArtifactPool';
@@ -360,16 +360,32 @@ export default function ChatPage() {
     extractMissingInsights();
   }, [workflowGraph.nodes.length, status]); // Run when graph changes and not streaming
 
-  // Show right panel if either artifacts, plans, or workflow exists
-  // Workflow now auto-shows to ensure last interaction is always visible
-  const showRightPanel = (hasArtifacts || hasPlans || hasWorkflow);
+  // Show right panel if either artifacts, plans, or workflow exists AND user wants it open
+  const showRightPanel = (hasArtifacts || hasPlans || hasWorkflow) && rightPanelOpen;
 
-  // Auto-open panel when artifacts, plans, or workflow appear
+  // Auto-open panel when NEW artifacts, plans, or workflow appear (only on first appearance)
+  // Use refs to track previous counts to avoid re-opening after user closes
+  const prevCountRef = useRef({ artifacts: 0, plans: 0, workflow: 0 });
+
   useEffect(() => {
-    if ((hasArtifacts || hasPlans || hasWorkflow) && !rightPanelOpen) {
+    const currentCount = {
+      artifacts: artifacts.length,
+      plans: plans.length,
+      workflow: workflowGraph.nodes.length
+    };
+
+    const hasNewContent =
+      currentCount.artifacts > prevCountRef.current.artifacts ||
+      currentCount.plans > prevCountRef.current.plans ||
+      currentCount.workflow > prevCountRef.current.workflow;
+
+    // Only auto-open if there's NEW content and panel is currently closed
+    if (hasNewContent && !rightPanelOpen) {
       setRightPanelOpen(true);
     }
-  }, [hasArtifacts, hasPlans, hasWorkflow, rightPanelOpen]);
+
+    prevCountRef.current = currentCount;
+  }, [artifacts.length, plans.length, workflowGraph.nodes.length, rightPanelOpen]);
 
   return (
     <div className="flex h-screen relative bg-background">
@@ -451,25 +467,40 @@ export default function ChatPage() {
               <div className="flex gap-2">
                 {hasPlans && (
                   <Button
-                    variant={rightPanelOpen && !hasArtifacts && !hasWorkflow ? "default" : "outline"}
+                    variant={rightPanelOpen ? "default" : "outline"}
                     size="sm"
                     onClick={() => setRightPanelOpen(!rightPanelOpen)}
                     className="gap-2"
                   >
                     <Sparkles size={16} />
-                    <span className="hidden sm:inline">Plans</span>
+                    <span className="hidden sm:inline">
+                      {rightPanelOpen ? "Hide Plans" : "Plans"}
+                    </span>
                   </Button>
                 )}
                 {hasWorkflow && (
                   <Button
-                    variant={rightPanelOpen && !hasArtifacts && !hasPlans ? "default" : "outline"}
+                    variant={rightPanelOpen ? "default" : "outline"}
                     size="sm"
                     onClick={() => setRightPanelOpen(!rightPanelOpen)}
                     className="gap-2"
                   >
                     <Network size={16} />
                     <span className="hidden sm:inline">
-                      {rightPanelOpen && !hasArtifacts && !hasPlans ? "Hide" : "Workflow"}
+                      {rightPanelOpen ? "Hide Workflow" : "Workflow"}
+                    </span>
+                  </Button>
+                )}
+                {hasArtifacts && (
+                  <Button
+                    variant={rightPanelOpen ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setRightPanelOpen(!rightPanelOpen)}
+                    className="gap-2"
+                  >
+                    <FlaskConical size={16} />
+                    <span className="hidden sm:inline">
+                      {rightPanelOpen ? "Hide Notebook" : "Notebook"}
                     </span>
                   </Button>
                 )}
@@ -502,6 +533,30 @@ export default function ChatPage() {
 
           {/* Input - Fixed at bottom */}
           <div className="bg-card backdrop-blur-sm border-t border-border p-6 flex-shrink-0">
+            {/* Smart Follow-up Suggestion Chip */}
+            {!input && suggestedFollowup && status === 'ready' && (
+              <div className="mb-3 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    sendMessage({ text: suggestedFollowup });
+                    setSuggestedFollowup(null);
+                  }}
+                  className="group flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-lg text-sm text-primary transition-all hover:scale-[1.02]"
+                >
+                  <Sparkles size={14} className="flex-shrink-0" />
+                  <span className="line-clamp-1">{suggestedFollowup}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSuggestedFollowup(null)}
+                  className="p-2 text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label="Dismiss suggestion"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
             <form onSubmit={handleSubmit} className={showRightPanel ? '' : 'max-w-7xl mx-auto'}>
               <div className="flex gap-3">
                 <div className="relative flex-1">
@@ -510,14 +565,8 @@ export default function ChatPage() {
                     onChange={handleInputChange}
                     disabled={status !== 'ready'}
                     className="w-full border border-border rounded-lg px-6 py-4 text-lg bg-background backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-ring transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    placeholder={suggestedFollowup ? "" : "Ask about your data..."}
+                    placeholder="Ask about your data..."
                   />
-                  {/* Show suggested follow-up when input is empty and suggestion exists */}
-                  {!input && suggestedFollowup && status === 'ready' && (
-                    <div className="absolute inset-0 px-6 py-4 text-lg pointer-events-none flex items-center text-muted-foreground/70">
-                      {suggestedFollowup}
-                    </div>
-                  )}
                 </div>
                 <Button
                   type="submit"
