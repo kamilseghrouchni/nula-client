@@ -77,7 +77,7 @@ export function executeJSX(code: string, props: any = {}) {
     'XAxis', 'YAxis', 'CartesianGrid', 'Tooltip', 'Legend', 'ResponsiveContainer',
     'PieChart', 'Pie', 'Cell', 'Area', 'AreaChart', 'ComposedChart',
     'RadarChart', 'Radar', 'RadialBarChart', 'RadialBar', 'PolarGrid', 'PolarAngleAxis', 'PolarRadiusAxis',
-    'ReferenceLine', 'ReferenceArea', 'ReferenceDot',
+    'ReferenceLine', 'ReferenceArea', 'ReferenceDot', 'Label', 'LabelList',
     wrappedCode
   );
 
@@ -97,7 +97,8 @@ export function executeJSX(code: string, props: any = {}) {
       recharts.AreaChart, recharts.ComposedChart,
       recharts.RadarChart, recharts.Radar, recharts.RadialBarChart, recharts.RadialBar,
       recharts.PolarGrid, recharts.PolarAngleAxis, recharts.PolarRadiusAxis,
-      recharts.ReferenceLine, recharts.ReferenceArea, recharts.ReferenceDot
+      recharts.ReferenceLine, recharts.ReferenceArea, recharts.ReferenceDot,
+      recharts.Label, recharts.LabelList
     );
     return result;
   } catch (execError: any) {
@@ -122,7 +123,8 @@ export function executeJSX(code: string, props: any = {}) {
           `- XAxis, YAxis, CartesianGrid, Tooltip, Legend\n` +
           `- ResponsiveContainer, Cell\n` +
           `- ReferenceLine, ReferenceArea, ReferenceDot\n` +
-          `- PolarGrid, PolarAngleAxis, PolarRadiusAxis\n\n` +
+          `- PolarGrid, PolarAngleAxis, PolarRadiusAxis\n` +
+          `- Label, LabelList\n\n` +
           `Common mistakes:\n` +
           `- "RechartBar" → should be "Bar"\n` +
           `- "RechartBarChart" → should be "BarChart"\n` +
