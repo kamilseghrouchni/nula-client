@@ -67,6 +67,7 @@ export default function ChatPage() {
 
   const artifacts = useMemo(() => {
     const allArtifacts: any[] = [];
+    let artifactCounter = 0; // Global counter to ensure unique IDs
 
     // Regex for code blocks in markdown
     const jsxCodeBlockRegex = /```(?:jsx|javascript|tsx|js|typescript|ts)[\s\n]([\s\S]*?)```/g;
@@ -76,7 +77,7 @@ export default function ChatPage() {
 
     messages.forEach((message) => {
       if (message.role === 'assistant' && message.parts) {
-        message.parts.forEach((part: any) => {
+        message.parts.forEach((part: any, partIdx: number) => {
           if (part.type === 'text') {
             const text = part.text || '';
 
@@ -84,7 +85,7 @@ export default function ChatPage() {
             const codeBlockMatches = Array.from(text.matchAll(jsxCodeBlockRegex));
             codeBlockMatches.forEach((match: any, idx: number) => {
               allArtifacts.push({
-                id: `artifact-${message.id}-codeblock-${idx}`,
+                id: `artifact-${message.id}-p${partIdx}-cb${idx}-${artifactCounter++}`,
                 code: match[1].trim(),
                 createdAt: 0,
               });
@@ -101,7 +102,7 @@ export default function ChatPage() {
               if (innerCodeMatches.length > 0) {
                 innerCodeMatches.forEach((innerMatch: any, innerIdx: number) => {
                   allArtifacts.push({
-                    id: `artifact-${message.id}-tag-${idx}-${innerIdx}`,
+                    id: `artifact-${message.id}-p${partIdx}-tag${idx}-${innerIdx}-${artifactCounter++}`,
                     code: innerMatch[1].trim(),
                     createdAt: 0,
                   });
@@ -109,7 +110,7 @@ export default function ChatPage() {
               } else {
                 // If no code block inside, treat the whole content as JSX
                 allArtifacts.push({
-                  id: `artifact-${message.id}-tag-${idx}`,
+                  id: `artifact-${message.id}-p${partIdx}-tag${idx}-${artifactCounter++}`,
                   code: artifactContent,
                   createdAt: 0,
                 });
@@ -175,8 +176,26 @@ export default function ChatPage() {
     const plan = plans.find(p => p.id === planId);
     if (!plan || status !== 'ready') return;
 
-    // Send plan content as a build request
-    const buildMessage = `Please build this plan:\n\n${plan.content}`;
+    // Extract the first step from the plan to avoid breaking context window
+    // Plans are typically formatted as: "1. First step\n2. Second step..."
+    const extractFirstStep = (content: string): string => {
+      // Find where step 2 starts
+      const step2Index = content.search(/\n\s*2\./);
+      let firstStepText = step2Index > -1 ? content.substring(0, step2Index) : content;
+
+      // Remove the "1." prefix if present
+      firstStepText = firstStepText.replace(/^\s*1\.\s*/, '').trim();
+
+      // Limit length to prevent context issues
+      if (firstStepText.length > 200) {
+        firstStepText = firstStepText.substring(0, 197) + '...';
+      }
+
+      return firstStepText;
+    };
+
+    const firstStep = extractFirstStep(plan.content);
+    const buildMessage = `Let's start with the first step: ${firstStep}`;
     sendMessage({ text: buildMessage });
     setInput('');
     setSuggestedFollowup(null);
@@ -341,15 +360,16 @@ export default function ChatPage() {
     extractMissingInsights();
   }, [workflowGraph.nodes.length, status]); // Run when graph changes and not streaming
 
-  // Show right panel if either artifacts, plans, or workflow exists AND panel is open
-  const showRightPanel = (hasArtifacts || hasPlans || (hasWorkflow && rightPanelOpen));
+  // Show right panel if either artifacts, plans, or workflow exists
+  // Workflow now auto-shows to ensure last interaction is always visible
+  const showRightPanel = (hasArtifacts || hasPlans || hasWorkflow);
 
-  // Auto-open panel when artifacts or plans appear
+  // Auto-open panel when artifacts, plans, or workflow appear
   useEffect(() => {
-    if ((hasArtifacts || hasPlans) && !rightPanelOpen) {
+    if ((hasArtifacts || hasPlans || hasWorkflow) && !rightPanelOpen) {
       setRightPanelOpen(true);
     }
-  }, [hasArtifacts, hasPlans, rightPanelOpen]);
+  }, [hasArtifacts, hasPlans, hasWorkflow, rightPanelOpen]);
 
   return (
     <div className="flex h-screen relative bg-background">

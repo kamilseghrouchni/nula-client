@@ -15,6 +15,10 @@ export async function extractInsightFromResponse(
     return null;
   }
 
+  // Debug: Log what we're analyzing
+  console.log(`[Insight Extractor] Analyzing ${responseText.length} chars for phase: ${phase}`);
+  console.log(`[Insight Extractor] First 200 chars:`, responseText.substring(0, 200));
+
   try {
     const { text } = await generateText({
       model: anthropic('claude-haiku-4-5'),
@@ -25,35 +29,52 @@ Analysis Phase: ${phase}
 Analysis Response:
 ${responseText}
 
-Extract the single most important insight, finding, or action from this analysis.
+Extract the single most important insight about THE DATA from this analysis.
+
+CRITICAL PRIORITY ORDER:
+1. **DATA INTERPRETATIONS FIRST** - What patterns, values, trends, or findings were discovered in the data?
+2. **ACTIONS ONLY IF NO DATA INSIGHTS** - What was done (only if there are no interpretable findings about the data itself)
 
 Requirements:
 - Maximum 100 characters
 - Be specific and quantitative when possible
-- Focus on: key findings, decisions made, actions taken, or important discoveries
+- Prioritize what the data SHOWS/REVEALS over what was DONE
 - Use active voice
 - No unnecessary words
 
-Examples of good insights:
+Examples of GOOD insights (data-focused):
+- "PC1 explains 67% variance, clear separation between treatment groups"
+- "High CV in lipid metabolites: avg 18%, max 34%"
+- "23 metabolites show significant differences (p<0.05, FC>2)"
+- "Strong batch effect detected: 23% variance between batches"
+- "Normalization reduced batch variance from 23% to 5%"
+
+Examples of ACCEPTABLE insights (action-focused, use only if no data findings):
 - "Loaded 245 metabolites across 120 samples from 3 batches"
-- "High CV in lipids (avg 18%, max 34%) - flagged for review"
-- "PCA: PC1 explains 67% variance, clear group separation"
-- "Applied log + quantile normalization, reduced batch variance to 5%"
-- "12 metabolites significantly different (p<0.05, FC>2)"
+- "Applied log transformation and quantile normalization"
+
+Examples to AVOID (too vague):
+- "Data was loaded" ❌
+- "Analysis completed" ❌
+- "Plot was generated" ❌
 
 Return ONLY the insight text, nothing else.`,
     });
 
     const insight = text.trim();
 
+    console.log(`[Insight Extractor] Generated insight: "${insight}"`);
+
     // Validate insight length
     if (insight.length > 150) {
-      return insight.substring(0, 147) + '...';
+      const truncated = insight.substring(0, 147) + '...';
+      console.log(`[Insight Extractor] Truncated to: "${truncated}"`);
+      return truncated;
     }
 
     return insight || null;
   } catch (error) {
-    console.error('Error extracting insight:', error);
+    console.error('[Insight Extractor] Error:', error);
     return null;
   }
 }

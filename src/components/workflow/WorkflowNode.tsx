@@ -90,7 +90,7 @@ export function WorkflowNode({ data }: NodeProps) {
 
       {/* Node Card */}
       <div
-        className="bg-card border-2 rounded-lg shadow-lg hover:shadow-xl transition-shadow min-w-[250px]"
+        className="bg-card border-2 rounded-lg shadow-lg hover:shadow-xl transition-shadow w-[250px]"
         style={{
           borderColor: nodeData.color,
         }}
@@ -128,7 +128,9 @@ export function WorkflowNode({ data }: NodeProps) {
           {nodeData.userQuery && (
             <div className="mb-2">
               <p className="text-sm font-medium text-foreground line-clamp-2 leading-relaxed">
-                {nodeData.userQuery}
+                {nodeData.userQuery.length > 100
+                  ? `${nodeData.userQuery.substring(0, 97)}...`
+                  : nodeData.userQuery}
               </p>
             </div>
           )}

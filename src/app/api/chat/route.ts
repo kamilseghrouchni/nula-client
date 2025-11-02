@@ -1,15 +1,13 @@
 import { anthropic } from '@ai-sdk/anthropic';
 import {
   streamText,
-  experimental_createMCPClient,
   convertToModelMessages,
   UIMessage,
   stepCountIs,
   createUIMessageStream,
   createUIMessageStreamResponse
 } from 'ai';
-import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { loadMCPConfig, getFirstServerConfig } from '@/lib/mcp/config';
+import { getAllTools } from '@/lib/mcp/multiClient';
 import { SYSTEM_PROMPT } from '@/lib/prompts/system';
 import { buildDataContext, formatContextForPrompt } from '@/lib/context/dataContext';
 import { shouldSummarize, calculateContextSize } from '@/lib/utils/tokenCounter';
@@ -18,30 +16,14 @@ import { extractPlanFromText, createPlanFromStep, savePlan } from '@/lib/cache/p
 
 export const maxDuration = 60;
 
-let mcpClient: Awaited<ReturnType<typeof experimental_createMCPClient>> | null = null;
-
 export async function POST(request: Request) {
   try {
     const json = await request.json();
     const { messages } = json as { messages: UIMessage[] };
 
-    // Initialize MCP client
-    if (!mcpClient) {
-      const config = loadMCPConfig();
-      const serverConfig = getFirstServerConfig(config);
-
-      mcpClient = await experimental_createMCPClient({
-        transport: new StdioClientTransport({
-          command: serverConfig.config.command,
-          args: serverConfig.config.args,
-          env: serverConfig.config.env,
-        }),
-      });
-
-      console.log('[MCP] Client initialized with', Object.keys(await mcpClient.tools()).length, 'tools');
-    }
-
-    const tools = await mcpClient.tools();
+    // Get tools from all MCP servers (cached after first call)
+    const tools = await getAllTools();
+    console.log('[MCP] Loaded tools from all servers:', Object.keys(tools).length);
     let stepCount = 0;
 
     // Build data context from message history
@@ -137,7 +119,7 @@ ${contextPrompt ? '\n\nREMINDER: Check the "Session Data Context" section above 
         }
 
         const result = streamText({
-          model: anthropic('claude-sonnet-4-5'),
+          model: anthropic('claude-haiku-4-5'),
           messages: messagesWithCaching,
           tools,
           stopWhen: stepCountIs(25),

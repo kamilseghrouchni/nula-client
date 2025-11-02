@@ -5,7 +5,7 @@ import { WorkflowPanel } from "./workflow/WorkflowPanel";
 import { LabNotebook } from "./notebook/LabNotebook";
 import { PlansPanel } from "./plans/PlansPanel";
 import type { UIMessage, Plan } from "@/lib/types";
-import { Network, FlaskConical, Sparkles } from "lucide-react";
+import { Network, FlaskConical, Sparkles, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Tab = "workflow" | "notebook" | "plans";
@@ -38,17 +38,31 @@ export function RightPanel({
   // Count how many content types exist
   const contentCount = [hasWorkflow, hasArtifacts, hasPlans].filter(Boolean).length;
 
-  // If only one type of content, show it directly without tabs
+  // If only one type of content, show it with close button
   if (contentCount === 1) {
-    if (hasWorkflow) {
-      return <WorkflowPanel messages={messages} onClose={onClose} />;
-    }
-    if (hasArtifacts) {
-      return <LabNotebook artifacts={artifacts} />;
-    }
-    if (hasPlans) {
-      return <PlansPanel plans={plans} onClose={onClose} onBuild={onPlanBuild} />;
-    }
+    return (
+      <div className="h-full flex flex-col bg-background border-l border-border">
+        {/* Header with close button */}
+        <div className="flex items-center justify-end border-b border-border px-2 py-2 flex-shrink-0">
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors rounded"
+              aria-label="Close panel"
+              title="Hide panel"
+            >
+              <ChevronRight size={20} />
+            </button>
+          )}
+        </div>
+        {/* Content */}
+        <div className="flex-1 overflow-hidden">
+          {hasWorkflow && <WorkflowPanel messages={messages} />}
+          {hasArtifacts && <LabNotebook artifacts={artifacts} />}
+          {hasPlans && <PlansPanel plans={plans} onBuild={onPlanBuild} />}
+        </div>
+      </div>
+    );
   }
 
   // Multiple types exist - show tabbed interface
@@ -99,6 +113,16 @@ export function RightPanel({
           </button>
         )}
         <div className="flex-1" />
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors rounded mr-1"
+            aria-label="Close panel"
+            title="Hide panel"
+          >
+            <ChevronRight size={20} />
+          </button>
+        )}
       </div>
 
       {/* Tab Content */}

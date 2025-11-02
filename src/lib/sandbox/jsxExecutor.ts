@@ -32,7 +32,7 @@ export function executeJSX(code: string, props: any = {}) {
   }
 
   // Remove import statements since we'll provide the modules directly
-  let cleanCode = code.replace(/import\s+.*?\s+from\s+['"][^'"]+['"];?\n?/g, '');
+  let cleanCode = code.replace(/import\s+.*?\s+from\s+['"][^'"]+[''];?\n?/g, '');
 
   // Replace export default with a variable assignment
   cleanCode = cleanCode.replace(/export\s+default\s+/g, 'const Component = ');
@@ -77,6 +77,7 @@ export function executeJSX(code: string, props: any = {}) {
     'XAxis', 'YAxis', 'CartesianGrid', 'Tooltip', 'Legend', 'ResponsiveContainer',
     'PieChart', 'Pie', 'Cell', 'Area', 'AreaChart', 'ComposedChart',
     'RadarChart', 'Radar', 'RadialBarChart', 'RadialBar', 'PolarGrid', 'PolarAngleAxis', 'PolarRadiusAxis',
+    'ReferenceLine', 'ReferenceArea', 'ReferenceDot',
     wrappedCode
   );
 
@@ -95,7 +96,8 @@ export function executeJSX(code: string, props: any = {}) {
       recharts.PieChart, recharts.Pie, recharts.Cell, recharts.Area,
       recharts.AreaChart, recharts.ComposedChart,
       recharts.RadarChart, recharts.Radar, recharts.RadialBarChart, recharts.RadialBar,
-      recharts.PolarGrid, recharts.PolarAngleAxis, recharts.PolarRadiusAxis
+      recharts.PolarGrid, recharts.PolarAngleAxis, recharts.PolarRadiusAxis,
+      recharts.ReferenceLine, recharts.ReferenceArea, recharts.ReferenceDot
     );
     return result;
   } catch (execError: any) {
@@ -118,7 +120,9 @@ export function executeJSX(code: string, props: any = {}) {
           `- RadarChart, Radar\n` +
           `- RadialBarChart, RadialBar\n` +
           `- XAxis, YAxis, CartesianGrid, Tooltip, Legend\n` +
-          `- ResponsiveContainer, Cell\n\n` +
+          `- ResponsiveContainer, Cell\n` +
+          `- ReferenceLine, ReferenceArea, ReferenceDot\n` +
+          `- PolarGrid, PolarAngleAxis, PolarRadiusAxis\n\n` +
           `Common mistakes:\n` +
           `- "RechartBar" → should be "Bar"\n` +
           `- "RechartBarChart" → should be "BarChart"\n` +
