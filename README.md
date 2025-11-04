@@ -1,30 +1,177 @@
 <div align="center">
-  <img src="./assets/banner.png" alt="NulaLabs Banner" width="100%">
+  <img src="./public/banner.png" alt="NulaLabs - AI-Powered Data Analysis Platform" width="100%">
+
+  <h1>🧬 NulaLabs</h1>
+
+  <p align="center">
+    <strong>Make your data accessible for AI agents.</strong><br/>
+    Automate metabolomics analysis with ease.
+  </p>
+
+  <p align="center">
+    <a href="https://github.com/kristerus/nulalabs/stargazers">
+      <img src="https://img.shields.io/github/stars/kristerus/nulalabs?style=for-the-badge&logo=github&color=yellow" alt="GitHub Stars"/>
+    </a>
+    <a href="https://github.com/kristerus/nulalabs/network/members">
+      <img src="https://img.shields.io/github/forks/kristerus/nulalabs?style=for-the-badge&logo=github&color=blue" alt="GitHub Forks"/>
+    </a>
+    <a href="https://github.com/kristerus/nulalabs/blob/main/LICENSE">
+      <img src="https://img.shields.io/badge/license-MIT-green.svg?style=for-the-badge" alt="License"/>
+    </a>
+  </p>
+
+  <p align="center">
+    <a href="https://nextjs.org">
+      <img src="https://img.shields.io/badge/Next.js-16.0-black?style=flat-square&logo=next.js" alt="Next.js"/>
+    </a>
+    <a href="https://react.dev">
+      <img src="https://img.shields.io/badge/React-19.0-61DAFB?style=flat-square&logo=react" alt="React"/>
+    </a>
+    <a href="https://www.typescriptlang.org/">
+      <img src="https://img.shields.io/badge/TypeScript-5.7-3178C6?style=flat-square&logo=typescript" alt="TypeScript"/>
+    </a>
+    <a href="https://modelcontextprotocol.io">
+      <img src="https://img.shields.io/badge/MCP-2024--11--05-purple?style=flat-square" alt="MCP"/>
+    </a>
+  </p>
+
+  <p align="center">
+    <a href="#-quick-start">Quick Start</a> •
+    <a href="#-demos">Demos</a> •
+    <a href="#-features">Features</a> •
+    <a href="#-documentation">Documentation</a> •
+    <a href="#-community">Community</a>
+  </p>
+
 </div>
-
-<div align="center">
-
-[![Next.js](https://img.shields.io/badge/Next.js-16.0-black?logo=next.js)](https://nextjs.org)
-[![React](https://img.shields.io/badge/React-19.2-blue?logo=react)](https://react.dev)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?logo=typescript)](https://www.typescriptlang.org/)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![MCP](https://img.shields.io/badge/MCP-1.20-purple)](https://modelcontextprotocol.io)
-
-</div>
-
-Transform your data analysis workflow with an intelligent chat interface that connects to multiple MCP servers, provides visual workflow tracking, and generates publication-ready visualizations - all powered by Claude Sonnet 4.5.
 
 ---
 
-## 🌟 What is NulaLabs?
+## 💡 What is NulaLabs?
 
-NulaLabs is a next-generation web application that brings the power of AI to your data analysis workflow. Built on the Model Context Protocol (MCP), it enables seamless integration with multiple data sources and analysis tools through an intuitive conversational interface.
+**NulaLabs** transforms your data analysis workflow with an intelligent chat interface that connects to multiple MCP servers, provides visual workflow tracking, and generates publication-ready visualizations - all powered by Claude Sonnet 4.5.
 
-**Perfect for:**
-- 🧬 Metabolomics researchers conducting exploratory data analysis
-- 😴 Sleep scientists analyzing polysomnography data
-- 📊 Data scientists building reproducible analysis workflows
-- 🔬 Lab teams collaborating on data interpretation
+Perfect for researchers, data scientists, and lab teams who want to:
+- 🧬 **Automate metabolomics analysis** - From QC to pathway enrichment
+- 😴 **Analyze sleep data** - Polysomnography, actigraphy, and more
+- 📊 **Build reproducible workflows** - Visual documentation of every analysis step
+- 🤝 **Collaborate on insights** - Share visualizations and workflows with your team
+
+---
+
+## 🎬 Demos
+
+See NulaLabs in action analyzing real data:
+
+<details open>
+<summary><b>🧬 Metabolomics QC Analysis</b></summary>
+
+> "Analyze the quality of my metabolomics data and show me the CV distribution"
+
+<div align="center">
+  <img src="./assets/demo-metabolomics.gif" alt="Metabolomics QC Analysis" width="800"/>
+</div>
+
+**What happens:**
+1. AI connects to EDA-MCP server
+2. Loads metabolomics dataset
+3. Calculates CV for PooledQC samples
+4. Generates interactive visualization
+5. Creates workflow node: "QC Assessment"
+6. Suggests next steps: "Would you like to see outlier detection?"
+
+[👉 See full example](./examples/metabolomics-qc.md)
+
+</details>
+
+<details>
+<summary><b>😴 Sleep Stage Analysis</b></summary>
+
+> "Show me the sleep stage distribution for all recordings in project X"
+
+<div align="center">
+  <img src="./assets/demo-sleep.gif" alt="Sleep Analysis" width="800"/>
+</div>
+
+**What happens:**
+1. AI connects to Sleepyrat MCP server
+2. Lists available projects
+3. Loads all recordings from selected project
+4. Analyzes sleep stage distribution
+5. Generates pie chart visualization
+6. Creates workflow: "Data Loading → Analysis → Visualization"
+
+[👉 See full example](./examples/sleep-analysis.md)
+
+</details>
+
+<details>
+<summary><b>🔍 Multi-Server Workflow</b></summary>
+
+> "Compare the metabolomics results with sleep quality metrics"
+
+<div align="center">
+  <img src="./assets/demo-multi-server.gif" alt="Multi-Server Analysis" width="800"/>
+</div>
+
+**What happens:**
+1. AI coordinates between EDA-MCP and Sleepyrat servers
+2. Loads metabolomics and sleep data in parallel
+3. Performs correlation analysis
+4. Generates combined visualization
+5. Creates complex workflow graph
+6. Tracks all data sources in session context
+
+[👉 See full example](./examples/multi-server.md)
+
+</details>
+
+---
+
+## ⚡ Quick Start
+
+Get started in **under 2 minutes**:
+
+### 🤖 For AI Agents
+
+Direct your favorite coding agent to [Quick Start Guide](#installation) below. Our system prompt is designed to work seamlessly with:
+- Cursor
+- Windsurf
+- Aider
+- Cline
+
+### 👋 For Humans
+
+1. **Install dependencies**
+   ```bash
+   git clone https://github.com/kristerus/nulalabs.git
+   cd nulalabs
+   npm install
+   ```
+
+2. **Configure environment**
+   ```bash
+   cp .env.example .env
+   # Add your ANTHROPIC_API_KEY
+   ```
+
+3. **Set up MCP servers**
+   ```bash
+   # Edit mcp-config.json with your server configurations
+   ```
+
+4. **Start the app**
+   ```bash
+   npm run dev
+   # Open http://localhost:3000
+   ```
+
+5. **Start analyzing!**
+   ```
+   "Analyze my metabolomics data"
+   "Show sleep stage distribution"
+   "Create a QC assessment plan"
+   ```
 
 ---
 
@@ -101,16 +248,49 @@ NulaLabs is a next-generation web application that brings the power of AI to you
 
 ---
 
-## 🎯 Benefits
+## 🎯 Why NulaLabs?
 
-| Feature | Benefit |
-|---------|---------|
-| **Multi-Server Support** | Eliminate tool switching - access all your data sources in one interface |
-| **Workflow Visualization** | Improve reproducibility - visual documentation of analysis steps |
-| **AI-Powered Assistance** | Reduce analysis time - get expert guidance on complex data |
-| **Privacy Protection** | Maintain compliance - enterprise-grade security for sensitive data |
-| **Smart Follow-ups** | Accelerate workflow - contextual next-step suggestions |
-| **Publication-Ready** | Save time - export-ready visualizations and workflows |
+<table>
+<tr>
+<td width="50%" valign="top">
+
+### 🚀 **Traditional Workflow**
+1. Open multiple analysis tools
+2. Copy-paste data between applications
+3. Write custom scripts for each analysis
+4. Manually track analysis steps
+5. Recreate visualizations for publication
+6. Document workflow in separate file
+
+⏱️ **Time:** 2-3 hours per analysis
+
+</td>
+<td width="50%" valign="top">
+
+### ✨ **With NulaLabs**
+1. Ask a question in natural language
+2. AI coordinates all tools automatically
+3. Analysis runs across multiple servers
+4. Workflow tracked visually in real-time
+5. Publication-ready charts generated
+6. Complete documentation auto-created
+
+⏱️ **Time:** 5-10 minutes per analysis
+
+</td>
+</tr>
+</table>
+
+### 📊 Comparison
+
+| Feature | Traditional Tools | NulaLabs |
+|---------|------------------|----------|
+| **Multi-Server Access** | ❌ Switch between tools | ✅ One interface for all |
+| **Workflow Documentation** | ❌ Manual tracking | ✅ Automatic visual graph |
+| **AI Assistance** | ❌ No guidance | ✅ Expert suggestions |
+| **Reproducibility** | ⚠️ Manual documentation | ✅ Built-in tracking |
+| **Learning Curve** | ⚠️ Steep | ✅ Natural language |
+| **Collaboration** | ⚠️ Share files manually | ✅ Share workflows easily |
 
 ---
 
@@ -622,12 +802,86 @@ Special thanks to the open-source community!
 
 ---
 
-## 🌟 Star History
+## 💬 Community
 
-If you find NulaLabs useful, please consider giving it a star on GitHub!
+<div align="center">
+
+Join our growing community of researchers and developers!
+
+[![GitHub Discussions](https://img.shields.io/badge/Discussions-Join-blue?style=for-the-badge&logo=github)](https://github.com/kristerus/nulalabs/discussions)
+[![GitHub Issues](https://img.shields.io/badge/Issues-Report-red?style=for-the-badge&logo=github)](https://github.com/kristerus/nulalabs/issues)
+[![Twitter Follow](https://img.shields.io/twitter/follow/nulalabs?style=for-the-badge&logo=twitter&color=1DA1F2)](https://twitter.com/nulalabs)
+[![Discord](https://img.shields.io/badge/Discord-Join-5865F2?style=for-the-badge&logo=discord)](https://discord.gg/nulalabs)
+
+</div>
+
+### 💡 **Get Help**
+- 📖 [Read the Docs](https://docs.nulalabs.io)
+- 💬 [Ask in Discussions](https://github.com/kristerus/nulalabs/discussions)
+- 🐛 [Report a Bug](https://github.com/kristerus/nulalabs/issues/new?template=bug_report.md)
+- ✨ [Request a Feature](https://github.com/kristerus/nulalabs/issues/new?template=feature_request.md)
+
+### 🤝 **Contribute**
+- 💻 [Submit a PR](https://github.com/kristerus/nulalabs/pulls)
+- 📝 [Improve Docs](https://github.com/kristerus/nulalabs/tree/main/docs)
+- 🌐 [Add Translations](https://github.com/kristerus/nulalabs/tree/main/locales)
+- 🎨 [Share Examples](https://github.com/kristerus/nulalabs/tree/main/examples)
+
+### 📢 **Stay Updated**
+- ⭐ Star this repo to follow development
+- 👀 Watch releases for new features
+- 🔔 Subscribe to our newsletter (coming soon!)
 
 ---
+
+## 🌟 Star History
+
+If you find NulaLabs useful, **give us a star** on GitHub!
+
+<div align="center">
+
+[![Star History Chart](https://api.star-history.com/svg?repos=kristerus/nulalabs&type=Date)](https://star-history.com/#kristerus/nulalabs&Date)
+
+</div>
+
+---
+
+## 📈 Project Stats
+
+<div align="center">
+
+![GitHub commit activity](https://img.shields.io/github/commit-activity/m/kristerus/nulalabs?style=flat-square)
+![GitHub last commit](https://img.shields.io/github/last-commit/kristerus/nulalabs?style=flat-square)
+![GitHub contributors](https://img.shields.io/github/contributors/kristerus/nulalabs?style=flat-square)
+![GitHub issues](https://img.shields.io/github/issues/kristerus/nulalabs?style=flat-square)
+![GitHub pull requests](https://img.shields.io/github/issues-pr/kristerus/nulalabs?style=flat-square)
+
+</div>
+
+---
+
+## 🏆 Contributors
+
+Thanks to these wonderful people who have contributed to NulaLabs:
+
+<div align="center">
+
+[![Contributors](https://contrib.rocks/image?repo=kristerus/nulalabs)](https://github.com/kristerus/nulalabs/graphs/contributors)
+
+</div>
+
+---
+
+<div align="center">
 
 **Built with ❤️ for the research community**
 
 *Transform your data analysis workflow today with NulaLabs*
+
+<p>
+  <a href="https://github.com/kristerus/nulalabs">⭐ Star on GitHub</a> •
+  <a href="https://docs.nulalabs.io">📖 Read the Docs</a> •
+  <a href="https://twitter.com/nulalabs">🐦 Follow on Twitter</a>
+</p>
+
+</div>
