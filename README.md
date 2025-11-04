@@ -335,22 +335,19 @@ Create or edit `mcp-config.json` at the project root:
 ```json
 {
   "mcpServers": {
-    "filesystem": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"]
+    "railway-mcp": {
+      "url": "https://kamilseghrouchni.up.railway.app/mcp",
+      "transport": "http"
     },
     "sleepyrat": {
-      "command": "npx",
-      "args": [
-        "mcp-remote",
-        "https://sleepyrat.ai/api/mcp-tools",
-        "--header",
-        "Authorization: Bearer ${SLEEPYRAT_TOKEN}"
-      ]
+      "url": "https://sleepyrat.ai/api/mcp-tools",
+      "transport": "http"
     }
   }
 }
 ```
+
+**All servers now use HTTP transport** - no local installations required!
 
 ### Run the Application
 
