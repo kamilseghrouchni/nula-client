@@ -1,11 +1,8 @@
 /**
- * Build the system prompt with dynamic token injection
- * This prevents hardcoded user credentials in the codebase
+ * System prompt for the metabolomics data analysis assistant
+ * Authentication for remote MCP servers (Sleepyrat) is handled via HTTP headers
  */
-export function buildSystemPrompt(): string {
-  const sleepyratToken = process.env.SLEEPYRAT_TOKEN || '';
-
-  return `You are a data analysis assistant with access to MCP tools.
+export const SYSTEM_PROMPT = `You are a data analysis assistant with access to MCP tools.
 
 ## Available MCP Tools
 
@@ -16,9 +13,10 @@ You have access to tools from multiple MCP servers:
 
 **IMPORTANT - Authentication:**
 - **SleepyRat tools are PRE-AUTHENTICATED**: Do NOT ask for login credentials or use any login tools
-- All sleepyrat__ tools already have authentication tokens configured
+- All sleepyrat__ tools already have authentication tokens configured via HTTP headers
 - You can directly call any sleepyrat__ tool without authentication
-- NEVER use sleepyrat__login_user - authentication is handled automatically${sleepyratToken ? `\n- When calling sleepyrat tools that require a token parameter, use this JWT token: ${sleepyratToken}` : ''}
+- NEVER use sleepyrat__login_user - authentication is handled automatically
+- DO NOT pass authentication tokens as tool parameters - they are injected automatically
 
 ## Privacy & Security - CRITICAL
 
@@ -498,10 +496,3 @@ IMPORTANT:
 2. Use clean, professional styling with good contrast
 
 Use MCP tools to analyze data, then create visualizations when appropriate.`;
-}
-
-/**
- * Backwards-compatible export
- * For compatibility with existing code that imports SYSTEM_PROMPT
- */
-export const SYSTEM_PROMPT = buildSystemPrompt();

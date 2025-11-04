@@ -7,7 +7,8 @@ import {
   createUIMessageStream,
   createUIMessageStreamResponse
 } from 'ai';
-import { getAllTools } from '@/lib/mcp/multiClient';
+import { getMCPClient } from '@/lib/mcp/mcpClient';
+import { convertMCPToolsToAISDK } from '@/lib/mcp/toolConverter';
 import { SYSTEM_PROMPT } from '@/lib/prompts/system';
 import { buildDataContext, formatContextForPrompt } from '@/lib/context/dataContext';
 import { shouldSummarize, calculateContextSize } from '@/lib/utils/tokenCounter';
@@ -21,9 +22,21 @@ export async function POST(request: Request) {
     const json = await request.json();
     const { messages } = json as { messages: UIMessage[] };
 
-    // Get tools from all MCP servers (cached after first call)
-    const tools = await getAllTools();
-    console.log('[MCP] Loaded tools from all servers:', Object.keys(tools).length);
+    // Get MCP client and convert tools to AI SDK format
+    const mcpClient = await getMCPClient();
+    const sessions = mcpClient.getAllActiveSessions();
+    const tools = await convertMCPToolsToAISDK(sessions);
+    console.log('[Chat/DEBUG] 📦 Loaded tools from all servers:', Object.keys(tools).length);
+
+    // Debug: Log Sleepyrat tool schemas
+    const sleepyratTools = Object.entries(tools).filter(([name]) => name.startsWith('sleepyrat__'));
+    console.log('[Chat/DEBUG] Sleepyrat tools count:', sleepyratTools.length);
+    if (sleepyratTools.length > 0) {
+      const firstTool = sleepyratTools[0];
+      console.log('[Chat/DEBUG] Sample Sleepyrat tool:', firstTool[0]);
+      console.log('[Chat/DEBUG] Sample schema:', JSON.stringify(firstTool[1].inputSchema));
+    }
+
     let stepCount = 0;
 
     // Build data context from message history
