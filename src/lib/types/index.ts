@@ -35,3 +35,36 @@ export interface Message {
     timestamp: number;
     isStreaming?: boolean;
   }
+
+  // MCP Resource message part
+  export interface ResourceFetchPart {
+    type: 'resource-fetch';
+    serverName: string;
+    uri: string;
+    status: 'fetching' | 'complete' | 'error';
+    resource?: {
+      name: string;
+      title?: string;
+      description?: string;
+      mimeType?: string;
+      content: string;
+    };
+    error?: string;
+  }
+
+  // MCP Prompt message part
+  export interface PromptFetchPart {
+    type: 'prompt-fetch';
+    serverName: string;
+    promptName: string;
+    args: Record<string, any>;
+    status: 'fetching' | 'complete' | 'error';
+    prompt?: {
+      description?: string;
+      messages: Array<{
+        role: 'user' | 'assistant';
+        content: string;
+      }>;
+    };
+    error?: string;
+  }

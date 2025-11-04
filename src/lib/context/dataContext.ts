@@ -9,8 +9,28 @@ export interface ToolCallSummary {
   timestamp?: number;
 }
 
+export interface ResourceFetchSummary {
+  serverName: string;
+  uri: string;
+  name: string;
+  messageId: string;
+  messageIndex: number;
+  timestamp?: number;
+}
+
+export interface PromptFetchSummary {
+  serverName: string;
+  promptName: string;
+  args: Record<string, any>;
+  messageId: string;
+  messageIndex: number;
+  timestamp?: number;
+}
+
 export interface DataContextSummary {
   toolCalls: ToolCallSummary[];
+  resourceFetches: ResourceFetchSummary[];
+  promptFetches: PromptFetchSummary[];
   loadedDatasets: string[];
   availableInformation: string[];
   lastUpdated: number;
@@ -22,11 +42,13 @@ export interface DataContextSummary {
  */
 export function buildDataContext(messages: UIMessage[]): DataContextSummary {
   const toolCalls: ToolCallSummary[] = [];
+  const resourceFetches: ResourceFetchSummary[] = [];
+  const promptFetches: PromptFetchSummary[] = [];
   const loadedDatasets = new Set<string>();
   const availableInfo = new Set<string>();
 
   messages.forEach((message, idx) => {
-    // Only look at assistant messages that might contain tool calls
+    // Only look at assistant messages that might contain tool calls, resources, or prompts
     if (message.role === 'assistant' && message.parts) {
       message.parts.forEach((part: any) => {
         // Check for tool calls (AI SDK v5 format - be permissive with types)
@@ -67,12 +89,44 @@ export function buildDataContext(messages: UIMessage[]): DataContextSummary {
           }
           datasetInfo.information.forEach(info => availableInfo.add(info));
         }
+
+        // Check for resource fetches
+        if (part.type === 'resource-fetch' && part.status === 'complete') {
+          const resourceSummary: ResourceFetchSummary = {
+            serverName: part.serverName,
+            uri: part.uri,
+            name: part.resource?.name || part.uri.split('/').pop() || part.uri,
+            messageId: message.id,
+            messageIndex: idx,
+          };
+          resourceFetches.push(resourceSummary);
+
+          // Track as available information
+          availableInfo.add(`Resource: ${resourceSummary.name} from ${part.serverName}`);
+        }
+
+        // Check for prompt fetches
+        if (part.type === 'prompt-fetch' && part.status === 'complete') {
+          const promptSummary: PromptFetchSummary = {
+            serverName: part.serverName,
+            promptName: part.promptName,
+            args: part.args || {},
+            messageId: message.id,
+            messageIndex: idx,
+          };
+          promptFetches.push(promptSummary);
+
+          // Track as available information
+          availableInfo.add(`Prompt: ${part.promptName} from ${part.serverName}`);
+        }
       });
     }
   });
 
   return {
     toolCalls,
+    resourceFetches,
+    promptFetches,
     loadedDatasets: Array.from(loadedDatasets),
     availableInformation: Array.from(availableInfo),
     lastUpdated: Date.now(),
@@ -137,23 +191,41 @@ function inferDatasetInfo(
  * Optimized for token reduction
  */
 export function formatContextForPrompt(context: DataContextSummary): string {
-  if (context.toolCalls.length === 0) {
+  if (context.toolCalls.length === 0 && context.resourceFetches.length === 0 && context.promptFetches.length === 0) {
     return ''; // No context to add yet
   }
 
   const sections: string[] = [];
 
-  sections.push('## Previous Data Loaded\n');
+  sections.push('## Session Data Context\n');
 
   // Concise dataset list
   if (context.loadedDatasets.length > 0) {
-    sections.push(`Datasets: ${context.loadedDatasets.join(', ')}`);
+    sections.push(`**Datasets:** ${context.loadedDatasets.join(', ')}`);
+  }
+
+  // MCP Resources fetched
+  if (context.resourceFetches.length > 0) {
+    const resourceList = context.resourceFetches
+      .map(r => `${r.name} (${r.serverName})`)
+      .slice(-3) // Most recent 3
+      .join(', ');
+    sections.push(`**Resources:** ${resourceList}`);
+  }
+
+  // MCP Prompts used
+  if (context.promptFetches.length > 0) {
+    const promptList = context.promptFetches
+      .map(p => `${p.promptName} (${p.serverName})`)
+      .slice(-3) // Most recent 3
+      .join(', ');
+    sections.push(`**Prompts:** ${promptList}`);
   }
 
   // Concise info list (limit to 3 most recent)
   if (context.availableInformation.length > 0) {
     const recentInfo = context.availableInformation.slice(-3);
-    sections.push(`Info: ${recentInfo.join(', ')}`);
+    sections.push(`**Available Info:** ${recentInfo.join(', ')}`);
   }
 
   // Condensed instructions
