@@ -1,0 +1,23 @@
+{
+  "mcpServers": {
+    "my-http-server": {
+      "url": "https://your-server-url.com/mcp",
+      "transport": "http",
+      "headers": {
+        "Authorization": "Bearer YOUR_TOKEN_HERE"
+      }
+    },
+    "my-local-server": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/data"],
+      "transport": "stdio",
+      "env": {
+        "CUSTOM_ENV_VAR": "value"
+      }
+    },
+    "another-http-server": {
+      "url": "https://api.example.com/mcp",
+      "transport": "http"
+    }
+  }
+}

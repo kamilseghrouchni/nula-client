@@ -4,8 +4,8 @@
   <h1>🧬 NulaLabs</h1>
 
   <p align="center">
-    <strong>Make your data accessible for AI agents.</strong><br/>
-    Automate metabolomics analysis with ease.
+    <strong>Universal MCP client for biological data analysis.</strong><br/>
+    Connect your analysis tools, empower scientists with AI.
   </p>
 
   <p align="center">
@@ -49,80 +49,157 @@
 
 ## 💡 What is NulaLabs?
 
-**NulaLabs** transforms your data analysis workflow with an intelligent chat interface that connects to multiple MCP servers, provides visual workflow tracking, and generates publication-ready visualizations - all powered by Claude Sonnet 4.5.
+**NulaLabs** is a universal MCP (Model Context Protocol) client built for biological data analysis. It provides an intelligent chat interface powered by Claude Sonnet 4.5 (Anthropic) that connects to unlimited MCP servers, tracks analysis workflows visually, and generates publication-ready visualizations.
 
-Perfect for researchers, data scientists, and lab teams who want to:
-- 🧬 **Automate metabolomics analysis** - From QC to pathway enrichment
-- 😴 **Analyze sleep data** - Polysomnography, actigraphy, and more
-- 📊 **Build reproducible workflows** - Visual documentation of every analysis step
-- 🤝 **Collaborate on insights** - Share visualizations and workflows with your team
+### 👥 Who is it for?
+
+**For Scientists & Researchers:**
+- Ask questions about your data in natural language
+- No programming required - just chat
+- Get instant visualizations and statistical analysis
+- Reproducible workflows automatically documented
+
+**For Bioinformaticians & CROs:**
+- Expose your analysis functions as MCP servers
+- Scale your expertise to multiple scientists simultaneously
+- No need to build custom UIs for each tool
+- Scientists can query data independently
+
+**For Contract Research Organizations:**
+- Provide clients with self-service data analysis
+- Maintain control over analysis logic (server-side)
+- Track all analysis workflows for compliance
+- Professional visualizations for client reports
+
+---
+
+## 🚀 Powered by mcp-use
+
+NulaLabs is built on **[mcp-use](https://github.com/mcp-use/mcp-use)**, the TypeScript framework that makes MCP integration seamless.
+
+### Why mcp-use?
+
+**Multi-Server Management Made Simple:**
+```typescript
+// Connect to unlimited servers with one line
+const client = MCPClient.fromDict(config);
+await client.createAllSessions();
+```
+
+**Key Benefits We Leverage:**
+
+✅ **Simultaneous Multi-Server Connections**
+- Connect to ALL your analysis servers at once
+- No manual client instantiation per server
+- Automatic tool discovery and namespacing
+
+✅ **Graceful Degradation**
+- System continues if one server fails
+- Perfect for production environments
+- Built-in error handling
+
+✅ **Simplified Authentication**
+- Automatic `Bearer` token injection from `authToken` field
+- Custom HTTP headers support
+- Runtime environment variable resolution
+
+✅ **Transport Flexibility**
+- HTTP and STDIO transports in single config
+- Switch between local and remote servers seamlessly
+- No code changes needed
+
+✅ **Developer Experience**
+- TypeScript-first with full type safety
+- Simple JSON configuration
+- Comprehensive documentation
+
+### Real-World Impact
+
+Before mcp-use, managing multiple MCP servers required:
+- Separate client instances per server
+- Manual tool merging logic
+- Complex error handling
+- Custom authentication wrappers
+
+**With mcp-use:**
+```json
+{
+  "mcpServers": {
+    "server1": { "url": "https://api1.com/mcp" },
+    "server2": { "url": "https://api2.com/mcp" }
+  }
+}
+```
+Done. All servers connected, tools merged, ready to use.
+
+[Learn more about mcp-use →](https://github.com/mcp-use/mcp-use)
 
 ---
 
 ## 🎬 Demos
 
-See NulaLabs in action analyzing real data:
+See NulaLabs in action with different types of biological data:
 
 <details open>
-<summary><b>🧬 Metabolomics QC Analysis</b></summary>
+<summary><b>🧬 Quality Control Analysis</b></summary>
 
-> "Analyze the quality of my metabolomics data and show me the CV distribution"
+> "Analyze the quality of my data and show me the CV distribution"
 
 <div align="center">
-  <img src="./assets/demo-metabolomics.gif" alt="Metabolomics QC Analysis" width="800"/>
+  <img src="./assets/demo-qc-analysis.gif" alt="QC Analysis Workflow" width="800"/>
 </div>
 
 **What happens:**
-1. AI connects to EDA-MCP server
-2. Loads metabolomics dataset
-3. Calculates CV for PooledQC samples
+1. AI connects to your analysis server
+2. Loads dataset from configured data source
+3. Calculates quality metrics (CV, reproducibility, etc.)
 4. Generates interactive visualization
 5. Creates workflow node: "QC Assessment"
-6. Suggests next steps: "Would you like to see outlier detection?"
+6. Suggests next steps based on results
 
-[👉 See full example](./examples/metabolomics-qc.md)
+**Server Type:** Any MCP server with statistical analysis tools
 
 </details>
 
 <details>
-<summary><b>😴 Sleep Stage Analysis</b></summary>
+<summary><b>📊 Exploratory Data Analysis</b></summary>
 
-> "Show me the sleep stage distribution for all recordings in project X"
+> "Show me the distribution of my samples across conditions"
 
 <div align="center">
-  <img src="./assets/demo-sleep.gif" alt="Sleep Analysis" width="800"/>
+  <img src="./assets/demo-eda.gif" alt="EDA Workflow" width="800"/>
 </div>
 
 **What happens:**
-1. AI connects to Sleepyrat MCP server
-2. Lists available projects
-3. Loads all recordings from selected project
-4. Analyzes sleep stage distribution
-5. Generates pie chart visualization
+1. AI connects to your EDA server
+2. Lists available datasets/projects
+3. Loads selected data
+4. Performs statistical analysis
+5. Generates appropriate visualizations (bar, pie, scatter, etc.)
 6. Creates workflow: "Data Loading → Analysis → Visualization"
 
-[👉 See full example](./examples/sleep-analysis.md)
+**Server Type:** Any MCP server with data exploration capabilities
 
 </details>
 
 <details>
 <summary><b>🔍 Multi-Server Workflow</b></summary>
 
-> "Compare the metabolomics results with sleep quality metrics"
+> "Compare results from multiple data sources"
 
 <div align="center">
   <img src="./assets/demo-multi-server.gif" alt="Multi-Server Analysis" width="800"/>
 </div>
 
 **What happens:**
-1. AI coordinates between EDA-MCP and Sleepyrat servers
-2. Loads metabolomics and sleep data in parallel
-3. Performs correlation analysis
-4. Generates combined visualization
+1. AI coordinates between multiple MCP servers
+2. Loads data from different sources in parallel
+3. Performs cross-server analysis
+4. Generates combined visualizations
 5. Creates complex workflow graph
 6. Tracks all data sources in session context
 
-[👉 See full example](./examples/multi-server.md)
+**Server Type:** Multiple MCP servers (e.g., proteomics + metabolomics, clinical + omics)
 
 </details>
 
@@ -168,9 +245,9 @@ Direct your favorite coding agent to [Quick Start Guide](#installation) below. O
 
 5. **Start analyzing!**
    ```
-   "Analyze my metabolomics data"
-   "Show sleep stage distribution"
-   "Create a QC assessment plan"
+   "Analyze the quality of my data"
+   "Show me the distribution across samples"
+   "Create an analysis plan for this dataset"
    ```
 
 ---
@@ -321,33 +398,69 @@ cp .env.example .env
 Create a `.env` file in the project root:
 
 ```bash
-# Required: Anthropic API Key
+# Required: Anthropic API Key (Claude Sonnet 4.5)
 ANTHROPIC_API_KEY=sk-ant-your_api_key_here
 
-# Optional: MCP Server Authentication
-SLEEPYRAT_TOKEN=your_sleepyrat_token
+# Optional: MCP Server Authentication (if your servers require auth)
+# MY_SERVER_TOKEN=your_token_here
+# ANOTHER_SERVER_TOKEN=another_token
 ```
+
+**Note:** The `.env` file is gitignored and never committed to version control.
 
 ### Configure MCP Servers
 
-Create or edit `mcp-config.json` at the project root:
+Create `mcp-config.json` at the project root (copy from `mcp-config.example.json`):
 
+**HTTP Server Example:**
 ```json
 {
   "mcpServers": {
-    "railway-mcp": {
-      "url": "https://kamilseghrouchni.up.railway.app/mcp",
-      "transport": "http"
-    },
-    "sleepyrat": {
-      "url": "https://sleepyrat.ai/api/mcp-tools",
-      "transport": "http"
+    "my-analysis-server": {
+      "url": "https://your-server-url.com/mcp",
+      "transport": "http",
+      "headers": {
+        "Authorization": "Bearer YOUR_TOKEN_HERE"
+      }
     }
   }
 }
 ```
 
-**All servers now use HTTP transport** - no local installations required!
+**Local STDIO Server Example:**
+```json
+{
+  "mcpServers": {
+    "my-local-server": {
+      "command": "npx",
+      "args": ["-y", "@your-org/mcp-server", "/path/to/data"],
+      "transport": "stdio",
+      "env": {
+        "CUSTOM_ENV_VAR": "value"
+      }
+    }
+  }
+}
+```
+
+**Multiple Servers Example:**
+```json
+{
+  "mcpServers": {
+    "eda-server": {
+      "url": "https://eda.example.com/mcp",
+      "transport": "http"
+    },
+    "stats-server": {
+      "command": "python",
+      "args": ["-m", "stats_mcp_server"],
+      "transport": "stdio"
+    }
+  }
+}
+```
+
+**Note:** `mcp-config.json` is gitignored and never committed to version control.
 
 ### Run the Application
 
@@ -359,6 +472,40 @@ npm run dev
 ```
 
 **That's it!** Start chatting with your AI assistant and analyze your data.
+
+---
+
+## 📋 Requirements & Compatibility
+
+### AI Model Support
+- **Primary:** Anthropic Claude Sonnet 4.5 (recommended)
+- **API:** Anthropic API via `@ai-sdk/anthropic`
+- **Why Anthropic?** Best-in-class reasoning, tool use, and scientific analysis capabilities
+
+### MCP Compatibility
+- **MCP Version:** 2024-11-05 specification
+- **Framework:** mcp-use v1.2.2+
+- **Transports:** HTTP and STDIO
+- **Server Types:** Any MCP-compliant server
+
+### Supported MCP Server Types
+NulaLabs works with ANY MCP server that provides:
+- ✅ Data loading/querying tools
+- ✅ Statistical analysis functions
+- ✅ Data transformation capabilities
+- ✅ File system access (optional)
+
+**Examples of compatible servers:**
+- Biological data analysis servers (metabolomics, proteomics, genomics)
+- Statistical analysis servers (R, Python-based)
+- Database query servers (SQL, NoSQL)
+- File system servers (for data access)
+- Custom domain-specific servers built by your team
+
+### Environment Requirements
+- Node.js 20+
+- npm or yarn
+- Anthropic API key (get from [console.anthropic.com](https://console.anthropic.com))
 
 ---
 
@@ -374,24 +521,24 @@ npm run dev
 
 ### Example Conversations
 
-**Metabolomics Analysis:**
+**Quality Control Analysis:**
 ```
-You: "Analyze the quality of my metabolomics data"
-AI: [Initializes session, loads data, calculates QC metrics]
-    "I've calculated the CV for PooledQC samples. Average CV is 12%..."
+You: "Analyze the quality of my data"
+AI: [Initializes session, connects to servers, loads data]
+    "I've calculated quality metrics. Average CV is 12%..."
     [Workflow node created: "QC Assessment"]
     [Generates QC metrics visualization]
 Follow-up: "Would you like to see outlier detection results?"
 ```
 
-**Sleep Data Analysis:**
+**Exploratory Data Analysis:**
 ```
-You: "Show me the sleep stage distribution for project X"
-AI: [Lists available projects, loads selected project]
-    "Found 24 recordings. Here's the stage distribution..."
+You: "Show me the distribution across sample groups"
+AI: [Lists available datasets, loads selected data]
+    "Found 145 samples across 4 groups. Here's the distribution..."
     [Workflow node created: "Data Loading"]
-    [Generates sleep stage pie chart]
-Follow-up: "Shall I analyze sleep bout durations?"
+    [Generates distribution visualization]
+Follow-up: "Shall I perform statistical comparison between groups?"
 ```
 
 ### Workflow Visualization
@@ -428,69 +575,154 @@ Click on a plan to execute it step-by-step.
 
 ---
 
+## 🔬 For CROs & Bioinformaticians
+
+### Building MCP Servers for Your Team
+
+NulaLabs is designed to work with YOUR analysis functions. By exposing your tools as MCP servers, you can:
+
+**Scale Your Expertise:**
+- Write analysis code once
+- Make it accessible to all scientists via natural language
+- No need to build custom UIs for each tool
+- Scientists work independently without bottlenecking your team
+
+**Maintain Control:**
+- Analysis logic stays server-side (your control)
+- Scientists can't accidentally modify algorithms
+- Easy to update tools without client changes
+- Version control and reproducibility built-in
+
+**Perfect for CROs:**
+- Provide clients with self-service analysis
+- Track all analysis workflows for compliance
+- Professional visualizations for reports
+- Maintain IP protection (server-side code)
+
+### How to Create an MCP Server
+
+**Option 1: Python (Recommended for Data Scientists)**
+```python
+from mcp import Server
+import pandas as pd
+
+server = Server("my-analysis-server")
+
+@server.tool()
+def calculate_stats(dataset_id: str) -> dict:
+    """Calculate descriptive statistics for a dataset."""
+    df = load_dataset(dataset_id)
+    return {
+        "mean": df.mean().to_dict(),
+        "std": df.std().to_dict(),
+        "n_samples": len(df)
+    }
+
+if __name__ == "__main__":
+    server.run()
+```
+
+**Option 2: TypeScript/JavaScript**
+```typescript
+import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+
+const server = new Server({
+  name: "my-analysis-server",
+  version: "1.0.0"
+});
+
+server.setRequestHandler(ListToolsRequestSchema, async () => ({
+  tools: [{
+    name: "calculate_stats",
+    description: "Calculate descriptive statistics",
+    inputSchema: { /* ... */ }
+  }]
+}));
+```
+
+**Deploy Your Server:**
+- **Local:** Run via STDIO (perfect for desktop deployment)
+- **Remote:** Deploy to Railway, Heroku, AWS Lambda
+- **Containerized:** Docker for reproducible environments
+
+### Integration Architecture
+
+```
+Scientists (NulaLabs Client)
+         ↓
+    Natural Language Query
+         ↓
+   Claude Sonnet 4.5
+         ↓
+    Your MCP Servers (HTTP/STDIO)
+         ↓
+    Your Analysis Functions
+         ↓
+    Your Data Sources
+```
+
+**Benefits:**
+- Scientists ask questions in English
+- AI translates to tool calls
+- Your code executes server-side
+- Results returned as JSON
+- Visualizations generated automatically
+
+### Example Use Cases
+
+**Metabolomics Lab:**
+```
+Server Tools: load_data, calculate_cv, detect_outliers, pathway_analysis
+Scientists ask: "What's the quality of batch 5?"
+→ AI calls: calculate_cv(batch=5) → Returns: CV metrics
+→ Generates: Interactive bar chart
+```
+
+**CRO Serving Pharma Clients:**
+```
+Server Tools: query_samples, run_stats, generate_report
+Client asks: "Compare treatment vs control"
+→ AI calls: query_samples(groups=["treatment","control"])
+→ AI calls: run_stats(test="ttest")
+→ Generates: Statistical comparison with p-values
+```
+
+**Genomics Pipeline:**
+```
+Server Tools: align_reads, call_variants, annotate
+Researcher asks: "Run variant calling on sample X"
+→ AI calls: align_reads(sample="X")
+→ AI calls: call_variants(aligned_bam="X.bam")
+→ Tracks: Complete workflow with each step
+```
+
+### Resources for Building Servers
+
+- **MCP Documentation:** [modelcontextprotocol.io](https://modelcontextprotocol.io)
+- **Example Servers:** [github.com/modelcontextprotocol](https://github.com/modelcontextprotocol)
+- **mcp-use Framework:** [github.com/mcp-use/mcp-use](https://github.com/mcp-use/mcp-use)
+
+---
+
 ## ⚙️ Configuration
 
 ### MCP Server Setup
 
-#### Local Servers (STDIO)
-
-```json
-{
-  "mcpServers": {
-    "filesystem": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"],
-      "env": {}
-    }
-  }
-}
-```
-
-#### Remote Servers (HTTP via mcp-remote)
-
-```json
-{
-  "mcpServers": {
-    "remote-api": {
-      "command": "npx",
-      "args": [
-        "mcp-remote",
-        "https://api.example.com/mcp-tools",
-        "--header",
-        "Authorization: Bearer ${API_TOKEN}"
-      ],
-      "env": {}
-    }
-  }
-}
-```
+Configuration examples are provided in the [Configure MCP Servers](#configure-mcp-servers) section above. Both HTTP and STDIO transports are supported.
 
 ### Environment Variables
 
 ```bash
-# Required
+# Required: Anthropic API for Claude Sonnet 4.5
 ANTHROPIC_API_KEY=sk-ant-...
 
-# Optional: MCP Server Tokens (use ${VARIABLE} in mcp-config.json)
-SLEEPYRAT_TOKEN=your_token
-CUSTOM_SERVER_TOKEN=your_token
-
-# Optional: Server Credentials
-SERVER_USERNAME=username
-SERVER_PASSWORD=password
+# Optional: MCP Server Tokens (if your servers require authentication)
+# Use ${VARIABLE_NAME} syntax in mcp-config.json to reference these
+MY_SERVER_TOKEN=your_token_here
+ANOTHER_SERVER_TOKEN=another_token_here
 ```
 
-### Token Placeholder Resolution
-
-Use `${VARIABLE_NAME}` in `mcp-config.json` to reference environment variables:
-
-```json
-{
-  "args": ["--header", "Authorization: Bearer ${SLEEPYRAT_TOKEN}"]
-}
-```
-
-Tokens are automatically injected at runtime from `.env` - **never** commit tokens to git!
+**Security Note:** All environment variables are gitignored and never committed to version control.
 
 ---
 
@@ -502,8 +734,8 @@ Tokens are automatically injected at runtime from `.env` - **never** commit toke
 |-----------|-----------|
 | **Framework** | Next.js 16 (App Router) |
 | **UI** | React 19, Tailwind CSS 4 |
-| **AI** | Anthropic Claude Sonnet 4.5 |
-| **MCP** | @modelcontextprotocol/sdk |
+| **AI** | Anthropic Claude Sonnet 4.5 via `@ai-sdk/anthropic` |
+| **MCP** | mcp-use v1.2.2 (built on @modelcontextprotocol/sdk) |
 | **Visualization** | Recharts, ReactFlow |
 | **State** | React hooks, client-side caching |
 
@@ -794,8 +1026,8 @@ Special thanks to the open-source community!
   - [Issue Tracker](https://github.com/yourusername/nulalabs/issues)
 
 - **Related Projects**
-  - [mcp-use](https://github.com/mcp-use/mcp-use) - MCP framework
-  - [SleepyRat](https://sleepyrat.ai) - Sleep analysis platform
+  - [mcp-use](https://github.com/mcp-use/mcp-use) - MCP client framework (powers NulaLabs)
+  - [Model Context Protocol](https://modelcontextprotocol.io) - MCP specification
 
 ---
 
