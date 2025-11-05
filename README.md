@@ -9,16 +9,16 @@
   </p>
 
   <p align="center">
-    <a href="https://github.com/kristerus/nulalabs/actions/workflows/ci.yml">
-      <img src="https://img.shields.io/github/actions/workflow/status/kristerus/nulalabs/ci.yml?branch=main&style=for-the-badge&logo=github-actions&label=CI" alt="CI Status"/>
+    <a href="https://github.com/kamilseghrouchni/nula-client/actions/workflows/ci.yml">
+      <img src="https://img.shields.io/github/actions/workflow/status/kamilseghrouchni/nula-client/ci.yml?branch=main&style=for-the-badge&logo=github-actions&label=CI" alt="CI Status"/>
     </a>
-    <a href="https://github.com/kristerus/nulalabs/stargazers">
-      <img src="https://img.shields.io/github/stars/kristerus/nulalabs?style=for-the-badge&logo=github&color=yellow" alt="GitHub Stars"/>
+    <a href="https://github.com/kamilseghrouchni/nula-client/stargazers">
+      <img src="https://img.shields.io/github/stars/kamilseghrouchni/nula-client?style=for-the-badge&logo=github&color=yellow" alt="GitHub Stars"/>
     </a>
-    <a href="https://github.com/kristerus/nulalabs/network/members">
-      <img src="https://img.shields.io/github/forks/kristerus/nulalabs?style=for-the-badge&logo=github&color=blue" alt="GitHub Forks"/>
+    <a href="https://github.com/kamilseghrouchni/nula-client/network/members">
+      <img src="https://img.shields.io/github/forks/kamilseghrouchni/nula-client?style=for-the-badge&logo=github&color=blue" alt="GitHub Forks"/>
     </a>
-    <a href="https://github.com/kristerus/nulalabs/blob/main/LICENSE">
+    <a href="https://github.com/kamilseghrouchni/nula-client/blob/main/LICENSE">
       <img src="https://img.shields.io/badge/license-MIT-green.svg?style=for-the-badge" alt="License"/>
     </a>
   </p>
