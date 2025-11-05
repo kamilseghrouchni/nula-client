@@ -395,22 +395,22 @@ export default function ChatPage() {
         <div className="w-full h-full flex items-center justify-center relative">
           {/* Welcome Content - Centered */}
           <div className="text-center px-4 sm:px-8 max-w-6xl mx-auto w-full">
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-foreground mb-4">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-foreground mb-4 animate-fade-in-up glow-text">
               MCP Web Client
             </h1>
-            <p className="text-lg sm:text-xl text-muted-foreground mb-12">
+            <p className="text-lg sm:text-xl text-muted-foreground mb-12 animate-fade-in-up stagger-1">
               AI-powered data analysis with Model Context Protocol
             </p>
 
             {/* Centered Input */}
-            <form onSubmit={handleSubmit} className="max-w-4xl mx-auto">
+            <form onSubmit={handleSubmit} className="max-w-4xl mx-auto animate-fade-in-up stagger-2">
               <div className="flex gap-3 sm:gap-4">
                 <div className="relative flex-1">
                   <input
                     value={input}
                     onChange={handleInputChange}
                     disabled={status !== 'ready'}
-                    className="w-full border border-border rounded-lg px-6 py-4 text-base sm:text-lg bg-card backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-ring transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full border border-border rounded-lg px-6 py-4 text-base sm:text-lg bg-card backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-ring transition-smooth glow-border disabled:opacity-50 disabled:cursor-not-allowed"
                     placeholder={suggestedFollowup ? "" : "Ask about your data..."}
                   />
                   {/* Show suggested follow-up when input is empty and suggestion exists */}
@@ -423,10 +423,10 @@ export default function ChatPage() {
                 <Button
                   type="submit"
                   disabled={(!input.trim() && !suggestedFollowup) || status !== 'ready'}
-                  className="px-6 py-4 text-base sm:text-lg rounded-lg"
+                  className="px-6 py-4 text-base sm:text-lg rounded-lg interactive-scale transition-smooth"
                 >
                   {status === 'streaming' ? (
-                    <Loader2 className="w-6 h-6 animate-spin" />
+                    <Loader2 className="w-6 h-6 animate-spin pulse-glow" />
                   ) : (
                     <Send className="w-6 h-6" />
                   )}
@@ -435,7 +435,7 @@ export default function ChatPage() {
             </form>
 
             {/* Suggestion Chips */}
-            <div className="max-w-4xl mx-auto mt-6 sm:mt-8">
+            <div className="max-w-4xl mx-auto mt-6 sm:mt-8 animate-fade-in-up stagger-3">
               <Suggestions>
                 {suggestions.map((suggestion) => (
                   <Suggestion
@@ -470,7 +470,7 @@ export default function ChatPage() {
                     variant={rightPanelOpen ? "default" : "outline"}
                     size="sm"
                     onClick={() => setRightPanelOpen(!rightPanelOpen)}
-                    className="gap-2"
+                    className="gap-2 interactive-scale transition-smooth animate-scale-in"
                   >
                     <Sparkles size={16} />
                     <span className="hidden sm:inline">
@@ -483,7 +483,7 @@ export default function ChatPage() {
                     variant={rightPanelOpen ? "default" : "outline"}
                     size="sm"
                     onClick={() => setRightPanelOpen(!rightPanelOpen)}
-                    className="gap-2"
+                    className="gap-2 interactive-scale transition-smooth animate-scale-in stagger-1"
                   >
                     <Network size={16} />
                     <span className="hidden sm:inline">
@@ -496,7 +496,7 @@ export default function ChatPage() {
                     variant={rightPanelOpen ? "default" : "outline"}
                     size="sm"
                     onClick={() => setRightPanelOpen(!rightPanelOpen)}
-                    className="gap-2"
+                    className="gap-2 interactive-scale transition-smooth animate-scale-in stagger-2"
                   >
                     <FlaskConical size={16} />
                     <span className="hidden sm:inline">
@@ -535,14 +535,14 @@ export default function ChatPage() {
           <div className="bg-card backdrop-blur-sm border-t border-border p-6 flex-shrink-0">
             {/* Smart Follow-up Suggestion Chip */}
             {!input && suggestedFollowup && status === 'ready' && (
-              <div className="mb-3 flex items-center gap-2">
+              <div className="mb-3 flex items-center gap-2 animate-slide-down">
                 <button
                   type="button"
                   onClick={() => {
                     sendMessage({ text: suggestedFollowup });
                     setSuggestedFollowup(null);
                   }}
-                  className="group flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-lg text-sm text-primary transition-all hover:scale-[1.02]"
+                  className="group flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-lg text-sm text-primary transition-smooth interactive-scale"
                 >
                   <Sparkles size={14} className="flex-shrink-0" />
                   <span className="line-clamp-1">{suggestedFollowup}</span>
@@ -550,7 +550,7 @@ export default function ChatPage() {
                 <button
                   type="button"
                   onClick={() => setSuggestedFollowup(null)}
-                  className="p-2 text-muted-foreground hover:text-foreground transition-colors"
+                  className="p-2 text-muted-foreground hover:text-foreground transition-smooth interactive-scale"
                   aria-label="Dismiss suggestion"
                 >
                   ✕
@@ -564,7 +564,7 @@ export default function ChatPage() {
                     value={input}
                     onChange={handleInputChange}
                     disabled={status !== 'ready'}
-                    className="w-full border border-border rounded-lg px-6 py-4 text-lg bg-background backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-ring transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full border border-border rounded-lg px-6 py-4 text-lg bg-background backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-ring transition-smooth glow-border disabled:opacity-50 disabled:cursor-not-allowed"
                     placeholder="Ask about your data..."
                   />
                 </div>
@@ -572,11 +572,11 @@ export default function ChatPage() {
                   type="submit"
                   disabled={(!input.trim() && !suggestedFollowup) || status !== 'ready'}
                   size="lg"
-                  className="gap-2"
+                  className="gap-2 interactive-scale transition-smooth"
                 >
                   {status === 'streaming' ? (
                     <>
-                      <Loader2 className="w-6 h-6 animate-spin" />
+                      <Loader2 className="w-6 h-6 animate-spin pulse-glow" />
                       <span>Sending...</span>
                     </>
                   ) : (

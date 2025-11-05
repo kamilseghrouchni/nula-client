@@ -48,30 +48,34 @@ export const MessageItem = memo(function MessageItem({ message, isStreaming = fa
     }
 
     return (
-      <Message from={message.role}>
-        <MessageAvatar
-          src={'/user-avatar.png'}
-          name={'You'}
-        />
-        <MessageContent variant="flat">
-          <Response>{userContent}</Response>
-        </MessageContent>
-      </Message>
+      <div className="message-enter">
+        <Message from={message.role}>
+          <MessageAvatar
+            src={'/user-avatar.png'}
+            name={'You'}
+          />
+          <MessageContent variant="flat">
+            <Response>{userContent}</Response>
+          </MessageContent>
+        </Message>
+      </div>
     );
   }
 
   // Handle simple string content (legacy format)
   if (typeof (message as any).content === 'string') {
     return (
-      <Message from={message.role}>
-        <MessageAvatar
-          src={'/assistant-avatar.png'}
-          name={'AI'}
-        />
-        <MessageContent variant="flat">
-          <Response>{(message as any).content}</Response>
-        </MessageContent>
-      </Message>
+      <div className="message-enter">
+        <Message from={message.role}>
+          <MessageAvatar
+            src={'/assistant-avatar.png'}
+            name={'AI'}
+          />
+          <MessageContent variant="flat">
+            <Response>{(message as any).content}</Response>
+          </MessageContent>
+        </Message>
+      </div>
     );
   }
 
@@ -223,27 +227,28 @@ export const MessageItem = memo(function MessageItem({ message, isStreaming = fa
   const isComplete = !isStreaming;
 
   return (
-    <Message from={message.role}>
-      <MessageAvatar
-        src={isUser ? '/user-avatar.png' : '/assistant-avatar.png'}
-        name={isUser ? 'You' : 'AI'}
-      />
-      <MessageContent variant="flat">
-        {/* Thinking Section - Task-based workflow with aesthetics */}
-        {hasThinkingActivity && (
-          <div className="not-prose mb-4 rounded-md border border-border bg-card backdrop-blur-sm transition-all">
-            <Task className="w-full" defaultOpen={false}>
-              <CollapsibleTrigger className="flex w-full items-center gap-2 sm:gap-3 text-muted-foreground text-sm sm:text-base md:text-lg transition-colors hover:text-foreground p-3 sm:p-4 md:p-5">
-                {(isThinkingPhase || isGeneratingPhase) ? (
-                  <Loader2 className="size-5 animate-spin" />
-                ) : (
-                  <BrainIcon className="size-5" />
-                )}
-                {isThinkingPhase && <span>Thinking...</span>}
-                {isGeneratingPhase && <span>Generating...</span>}
-                {isComplete && <span>Thought for a few seconds</span>}
-                <ChevronDownIcon className="size-6 ml-auto transition-transform" />
-              </CollapsibleTrigger>
+    <div className="message-enter">
+      <Message from={message.role}>
+        <MessageAvatar
+          src={isUser ? '/user-avatar.png' : '/assistant-avatar.png'}
+          name={isUser ? 'You' : 'AI'}
+        />
+        <MessageContent variant="flat">
+          {/* Thinking Section - Task-based workflow with aesthetics */}
+          {hasThinkingActivity && (
+            <div className="not-prose mb-4 rounded-md border border-border bg-card backdrop-blur-sm transition-smooth glow-border">
+              <Task className="w-full" defaultOpen={false}>
+                <CollapsibleTrigger className="flex w-full items-center gap-2 sm:gap-3 text-muted-foreground text-sm sm:text-base md:text-lg transition-smooth hover:text-foreground p-3 sm:p-4 md:p-5">
+                  {(isThinkingPhase || isGeneratingPhase) ? (
+                    <Loader2 className="size-5 animate-spin pulse-glow" />
+                  ) : (
+                    <BrainIcon className="size-5" />
+                  )}
+                  {isThinkingPhase && <span>Thinking...</span>}
+                  {isGeneratingPhase && <span>Generating...</span>}
+                  {isComplete && <span>Thought for a few seconds</span>}
+                  <ChevronDownIcon className="size-6 ml-auto transition-transform" />
+                </CollapsibleTrigger>
               <TaskContent className={cn(
                 "border-t border-border p-5 space-y-2",
                 "data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2 data-[state=open]:slide-in-from-top-2 outline-none data-[state=closed]:animate-out data-[state=open]:animate-in"
@@ -360,5 +365,6 @@ export const MessageItem = memo(function MessageItem({ message, isStreaming = fa
         )}
       </MessageContent>
     </Message>
+    </div>
   );
 });
