@@ -27,6 +27,7 @@ export async function createSyntheticTools(
           description: 'Optional: Filter resources by server name (e.g., "sleepyrat", "eda-mcp")'
         }
       }
+      // Note: No additionalProperties for better Anthropic compatibility
     }),
     execute: async (args: { serverName?: string }) => {
       console.log('[SyntheticTools] Executing mcp__list_resources');
@@ -107,6 +108,7 @@ export async function createSyntheticTools(
           description: 'Optional: Filter prompts by server name'
         }
       }
+      // Note: No additionalProperties for better Anthropic compatibility
     }),
     execute: async (args: { serverName?: string }) => {
       console.log('[SyntheticTools] Executing mcp__list_prompts');

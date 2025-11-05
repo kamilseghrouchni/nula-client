@@ -21,6 +21,14 @@ import { useMemo, memo } from 'react';
 import { cn } from '@/lib/utils';
 import { removeFollowupFromText } from '@/lib/utils/followup';
 import { PlanPreview } from './PlanPreview';
+import {
+  isToolPart,
+  normalizeToolPart,
+  getLastToolIndex,
+  isTextPart,
+  isReasoningPart,
+  type NormalizedToolPart
+} from '@/lib/utils/messagePartNormalizer';
 
 interface MessageItemProps {
   message: UIMessage;
@@ -98,19 +106,14 @@ export const MessageItem = memo(function MessageItem({ message, isStreaming = fa
     let final = '';
     const plans: Array<{ title: string; description?: string; content: string }> = [];
 
-    // First pass: find the index of the last tool
-    let lastToolIndex = -1;
-    message.parts.forEach((part: any, idx: number) => {
-      if (part.type === 'tool-call' || part.type === 'dynamic-tool') {
-        lastToolIndex = idx;
-      }
-    });
+    // First pass: find the index of the last tool (unified across all transports)
+    const lastToolIndex = getLastToolIndex(message);
 
     // Second pass: classify text parts
     let lastTextAfterTools: { text: string; index: number } | null = null as { text: string; index: number } | null;
 
     message.parts.forEach((part: any, idx: number) => {
-      if (part.type === 'text') {
+      if (isTextPart(part)) {
         let text = part.text || '';
 
         // Extract plan tags before removing them
@@ -172,14 +175,17 @@ export const MessageItem = memo(function MessageItem({ message, isStreaming = fa
             index: idx,
           });
         }
-      } else if (part.type === 'tool-call' || part.type === 'dynamic-tool') {
-        // Tool call
-        steps.push({
-          type: 'tool',
-          content: part,
-          index: idx,
-        });
-      } else if (part.type === 'reasoning') {
+      } else if (isToolPart(part)) {
+        // Tool call (unified across STDIO, HTTP, and standard transports)
+        const normalized = normalizeToolPart(part);
+        if (normalized) {
+          steps.push({
+            type: 'tool',
+            content: { ...part, _normalized: normalized }, // Attach normalized data
+            index: idx,
+          });
+        }
+      } else if (isReasoningPart(part)) {
         // Native reasoning tokens (some models like Sonnet 3.7, DeepSeek R1)
         if (part.text && part.text.trim()) {
           steps.push({
@@ -217,6 +223,17 @@ export const MessageItem = memo(function MessageItem({ message, isStreaming = fa
   }, [message.parts]);
 
   const hasThinkingActivity = thinkingSteps.length > 0;
+
+  // DEBUG: Log the state to understand what's happening
+  console.log('[MessageItem/DEBUG]', {
+    messageId: message.id,
+    isStreaming,
+    hasThinkingActivity,
+    thinkingStepsCount: thinkingSteps.length,
+    finalTextLength: finalText?.length || 0,
+    partsCount: message.parts?.length || 0,
+    partTypes: message.parts?.map((p: any) => p.type) || []
+  });
 
   // Determine phase: thinking vs generating vs complete
   // isThinkingPhase: Still executing tools, no response text yet → show "Thinking..."
@@ -287,9 +304,12 @@ export const MessageItem = memo(function MessageItem({ message, isStreaming = fa
 
                   if (step.type === 'tool') {
                     const tool = step.content;
-                    const toolName = tool.toolName || tool.type?.split('-').slice(1).join('-') || 'tool';
-                    const toolState = tool.state || 'input-available';
-                    const hasError = tool.errorText || (tool.result && (tool.result as any).error) || (tool.result && (tool.result as any).isError);
+                    // Use normalized tool data (unified across all transports)
+                    const normalized: NormalizedToolPart = tool._normalized;
+                    const toolName = normalized.toolName;
+                    const toolState = normalized.state;
+                    const toolResult = normalized.result;
+                    const hasError = tool.errorText || (toolResult && (toolResult as any).error) || (toolResult && (toolResult as any).isError);
 
                     return (
                       <TaskItem key={`tool-${idx}`} className="space-y-1">
@@ -304,7 +324,9 @@ export const MessageItem = memo(function MessageItem({ message, isStreaming = fa
                               state={toolState}
                             />
                             <ToolContentComponent>
-                              {tool.args && <ToolInput input={tool.args} />}
+                              {normalized.args && Object.keys(normalized.args).length > 0 && (
+                                <ToolInput input={normalized.args} />
+                              )}
 
                               {/* Error Display */}
                               {hasError && (
@@ -314,7 +336,7 @@ export const MessageItem = memo(function MessageItem({ message, isStreaming = fa
                                     Tool Execution Failed
                                   </div>
                                   <p className="text-sm text-destructive/80 mt-1 font-mono">
-                                    {tool.errorText || (tool.result as any)?.error || 'Unknown error occurred'}
+                                    {tool.errorText || (toolResult as any)?.error || 'Unknown error occurred'}
                                   </p>
                                   <p className="text-xs text-muted-foreground mt-2">
                                     You can ask me to retry this analysis with different parameters or approach.
@@ -323,9 +345,9 @@ export const MessageItem = memo(function MessageItem({ message, isStreaming = fa
                               )}
 
                               {/* Regular Output */}
-                              {!hasError && (tool.result || tool.errorText) && (
+                              {!hasError && (toolResult || tool.errorText) && (
                                 <ToolOutput
-                                  output={tool.result}
+                                  output={toolResult}
                                   errorText={tool.errorText}
                                 />
                               )}

@@ -4,10 +4,9 @@
  */
 
 export const suggestions = [
-  "What data is available to analyze?",
-  "Show me a summary of the dataset",
-  "Create a visualization of the key metrics",
-
+  "Analyze analytical variability and quality metrics in my LC-MS data",
+  "Assess standard stability and reproducibility across runs",
+  "Evaluate batch effects and systematic variation patterns",
 ] as const;
 
 export type SuggestionQuery = typeof suggestions[number];

@@ -151,8 +151,28 @@ ${contextPrompt ? '\n\nREMINDER: Check the "Session Data Context" section above 
           };
         }
 
+        // CRITICAL DEBUG: Write ALL tool schemas to file for inspection
+        const fs = await import('fs/promises');
+        const toolSchemas = Object.entries(tools).map(([name, tool]) => ({
+          name,
+          schema: tool.inputSchema
+        }));
+        await fs.writeFile(
+          '/tmp/tool_schemas_debug.json',
+          JSON.stringify(toolSchemas, null, 2)
+        );
+        console.log('[Chat/CRITICAL] 📝 Written', toolSchemas.length, 'tool schemas to /tmp/tool_schemas_debug.json');
+
+        // DEBUG: Log the messages being sent to Anthropic
+        console.log('[Chat/DEBUG] 📤 Messages being sent to Anthropic:');
+        await fs.writeFile(
+          '/tmp/messages_debug.json',
+          JSON.stringify(messagesWithCaching, null, 2)
+        );
+        console.log('[Chat/DEBUG] 📝 Written messages to /tmp/messages_debug.json');
+
         const result = streamText({
-          model: anthropic('claude-sonnet-4-5'),
+          model: anthropic('claude-haiku-4-5'),
           messages: messagesWithCaching,
           tools,
           stopWhen: stepCountIs(25),

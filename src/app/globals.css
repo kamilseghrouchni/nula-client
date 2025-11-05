@@ -1,24 +1,43 @@
 @import "tailwindcss";
 
 @theme {
-  /* Neutral color palette - no custom cyan theme */
-  --color-primary: #3b82f6;
+  /* Brand color palette with cyan/turquoise theme */
+  --color-primary: #0FDBF2;
   --color-primary-foreground: #ffffff;
-  --color-secondary: #1f2937;
+  --color-secondary: #1E2940;
   --color-secondary-foreground: #f9fafb;
   --color-destructive: #ef4444;
   --color-destructive-foreground: #ffffff;
-  --color-muted: #374151;
+  --color-muted: #265573;
   --color-muted-foreground: #9ca3af;
-  --color-accent: #4b5563;
+  --color-accent: #217282;
   --color-accent-foreground: #f9fafb;
-  --color-card: #1f2937;
+  --color-card: #1E2940;
   --color-card-foreground: #f9fafb;
-  --color-border: #374151;
-  --color-input: #374151;
-  --color-ring: #3b82f6;
+  --color-border: #3A5E77;
+  --color-input: #265573;
+  --color-ring: #0FDBF2;
   --color-background: #111827;
   --color-foreground: #f9fafb;
+
+  /* Brand-specific colors */
+  --color-brand-purple: #6D33A6;
+  --color-brand-cyan: #0FDBF2;
+  --color-brand-teal: #217282;
+  --color-brand-dark-blue: #1E2940;
+  --color-brand-medium-blue: #265573;
+  --color-brand-blue-gray: #3A5E77;
+
+  /* Custom Animations - Tailwind v4 format */
+  --animate-fade-in-up: fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-fade-in: fade-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-slide-in-right: slide-in-right 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-slide-in-left: slide-in-left 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-scale-in: scale-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-slide-down: slide-down 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-pulse-glow: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-shimmer: shimmer 2s infinite linear;
+  --animate-border-glow: border-glow 2s ease-in-out infinite;
 }
 
 * {
@@ -100,13 +119,13 @@ body {
 
 /* Keyframe Animations */
 @keyframes fadeInUp {
-  from {
+  0% {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(40px) scale(0.95);
   }
-  to {
+  100% {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
 
@@ -144,9 +163,20 @@ body {
 @keyframes pulseGlow {
   0%, 100% {
     opacity: 1;
+    filter: brightness(1);
   }
   50% {
-    opacity: 0.6;
+    opacity: 0.7;
+    filter: brightness(1.2);
+  }
+}
+
+@keyframes titleGlow {
+  0%, 100% {
+    filter: drop-shadow(0 0 20px rgba(6, 214, 219, 0.4)) drop-shadow(0 0 40px rgba(231, 76, 151, 0.3));
+  }
+  50% {
+    filter: drop-shadow(0 0 30px rgba(6, 214, 219, 0.6)) drop-shadow(0 0 60px rgba(231, 76, 151, 0.5));
   }
 }
 
@@ -183,10 +213,10 @@ body {
 
 @keyframes borderGlow {
   0%, 100% {
-    box-shadow: 0 0 5px rgba(59, 130, 246, 0.3), 0 0 10px rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 5px rgba(15, 219, 242, 0.3), 0 0 10px rgba(15, 219, 242, 0.1);
   }
   50% {
-    box-shadow: 0 0 10px rgba(59, 130, 246, 0.5), 0 0 20px rgba(59, 130, 246, 0.2);
+    box-shadow: 0 0 10px rgba(15, 219, 242, 0.5), 0 0 20px rgba(15, 219, 242, 0.2);
   }
 }
 
@@ -264,7 +294,7 @@ body {
 }
 
 .glow-text {
-  text-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+  text-shadow: 0 0 10px rgba(15, 219, 242, 0.5);
 }
 
 /* Shimmer Effect for Loading States */
@@ -272,7 +302,7 @@ body {
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(59, 130, 246, 0.1) 50%,
+    rgba(15, 219, 242, 0.1) 50%,
     transparent 100%
   );
   background-size: 1000px 100%;

@@ -1,11 +1,11 @@
 <div align="center">
-  <img src="./public/banner.png" alt="NulaLabs - AI-Powered Data Analysis Platform" width="100%">
+  <img src="./public/gifs/nula_home.gif" alt="Nula Labs - Zero-Shot Bioanalysis Agents" width="100%">
 
-  <h1>🧬 NulaLabs</h1>
+  <h1>Nula Labs</h1>
 
   <p align="center">
-    <strong>Universal MCP client for biological data analysis.</strong><br/>
-    Connect your analysis tools, empower scientists with AI.
+    <strong>Zero-Shot Bioanalysis Agents</strong><br/>
+    Empowering generalist AI models to perform specialist bioanalysis through curated MCP tools
   </p>
 
   <p align="center">
@@ -50,25 +50,45 @@
 
 ---
 
-## 💡 What is NulaLabs?
+## What is Nula Labs?
 
-**NulaLabs** is a universal MCP (Model Context Protocol) client built for biological data analysis. It provides an intelligent chat interface powered by Claude Sonnet 4.5 (Anthropic) that connects to unlimited MCP servers, tracks analysis workflows visually, and generates publication-ready visualizations.
+Nula Labs builds zero-shot bioanalysis agents that turn generalist AI models into domain specialists through curated MCP tools.
 
-### 👥 Who is it for?
+### The Thesis
 
-**For Scientists & Researchers:**
+**Generalist AI + Specialized Tools = Expert-Level Performance**
+
+With the right tools bundled in MCP servers, any off-the-shelf generalist model (Claude, GPT-4, Gemini) can achieve comparable performance to specialized bioinformatics models for routine analysis tasks. This democratizes access to expert-level bioanalysis without requiring:
+
+- Fine-tuning on proprietary datasets
+- Domain-specific model training
+- Expensive computational infrastructure
+- Deep bioinformatics expertise
+
+Instead, Nula Labs provides:
+
+- **Curated MCP tool servers** - Pre-built, validated analysis capabilities
+- **Intelligent orchestration** - AI agents that know when and how to use tools
+- **Universal accessibility** - Any researcher can perform expert-level analysis through natural language
+- **Reproducible workflows** - Automatic tracking and documentation of every analysis step
+
+The result: streamlined bioinformatics analysis accessible to everyone, from wet-lab scientists to computational biologists.
+
+### Who is it for?
+
+**Scientists & Researchers**
 - Ask questions about your data in natural language
-- No programming required - just chat
+- No programming required
 - Get instant visualizations and statistical analysis
 - Reproducible workflows automatically documented
 
-**For Bioinformaticians & CROs:**
+**Bioinformaticians & CROs**
 - Expose your analysis functions as MCP servers
 - Scale your expertise to multiple scientists simultaneously
 - No need to build custom UIs for each tool
 - Scientists can query data independently
 
-**For Contract Research Organizations:**
+**Contract Research Organizations**
 - Provide clients with self-service data analysis
 - Maintain control over analysis logic (server-side)
 - Track all analysis workflows for compliance
@@ -76,9 +96,9 @@
 
 ---
 
-## 🚀 Powered by mcp-use
+## Powered by mcp-use
 
-NulaLabs is built on **[mcp-use](https://github.com/mcp-use/mcp-use)**, the TypeScript framework that makes MCP integration seamless.
+NulaLabs is built on [mcp-use](https://github.com/mcp-use/mcp-use), the TypeScript framework that makes MCP integration seamless.
 
 ### Why mcp-use?
 
@@ -89,29 +109,29 @@ const client = MCPClient.fromDict(config);
 await client.createAllSessions();
 ```
 
-**Key Benefits We Leverage:**
+**Key Benefits:**
 
-✅ **Simultaneous Multi-Server Connections**
-- Connect to ALL your analysis servers at once
+**Simultaneous Multi-Server Connections**
+- Connect to all your analysis servers at once
 - No manual client instantiation per server
 - Automatic tool discovery and namespacing
 
-✅ **Graceful Degradation**
+**Graceful Degradation**
 - System continues if one server fails
 - Perfect for production environments
 - Built-in error handling
 
-✅ **Simplified Authentication**
+**Simplified Authentication**
 - Automatic `Bearer` token injection from `authToken` field
 - Custom HTTP headers support
 - Runtime environment variable resolution
 
-✅ **Transport Flexibility**
+**Transport Flexibility**
 - HTTP and STDIO transports in single config
 - Switch between local and remote servers seamlessly
 - No code changes needed
 
-✅ **Developer Experience**
+**Developer Experience**
 - TypeScript-first with full type safety
 - Simple JSON configuration
 - Comprehensive documentation
@@ -139,88 +159,53 @@ Done. All servers connected, tools merged, ready to use.
 
 ---
 
-## 🎬 Demos
+## Demos
 
-See NulaLabs in action with different types of biological data:
+See Nula Labs in action with real research platforms and biological data:
 
 <details open>
-<summary><b>🧬 Quality Control Analysis</b></summary>
+<summary><b>SleepyRat Integration - Sleep Stage Scoring (EPFL Research)</b></summary>
 
-> "Analyze the quality of my data and show me the CV distribution"
+> "Analyze my sleep recording data and show me the vigilance state distribution"
 
 <div align="center">
-  <img src="./assets/demo-qc-analysis.gif" alt="QC Analysis Workflow" width="800"/>
+  <img src="./public/gifs/sleepyrat.gif" alt="SleepyRat Integration Workflow" width="800"/>
 </div>
 
 **What happens:**
-1. AI connects to your analysis server
-2. Loads dataset from configured data source
-3. Calculates quality metrics (CV, reproducibility, etc.)
-4. Generates interactive visualization
-5. Creates workflow node: "QC Assessment"
-6. Suggests next steps based on results
+1. AI connects to SleepyRat MCP server (EPFL sleep research platform)
+2. Lists available projects and recordings
+3. Retrieves sleep stage scoring results (Wake, NREM, REM)
+4. Performs statistical analysis on sleep patterns
+5. Generates publication-ready visualizations
+6. Creates comprehensive workflow: "Data Access → Analysis → Visualization"
 
-**Server Type:** Any MCP server with statistical analysis tools
+**Real-world impact:**
+- **Platform:** [SleepyRat](https://sleepyrat.ai) - Web platform for automated animal sleep scoring (EPFL)
+- **Research use:** 50+ publications cite this platform for sleep research
+- **Analysis:** EEG/EMG signal processing, vigilance state classification, sleep dynamics
+- **Integration:** Natural language queries to research-grade sleep analysis tools
+- **Benefit:** Researchers interact with complex sleep data through conversation instead of manual data wrangling
 
-</details>
-
-<details>
-<summary><b>📊 Exploratory Data Analysis</b></summary>
-
-> "Show me the distribution of my samples across conditions"
-
-<div align="center">
-  <img src="./assets/demo-eda.gif" alt="EDA Workflow" width="800"/>
-</div>
-
-**What happens:**
-1. AI connects to your EDA server
-2. Lists available datasets/projects
-3. Loads selected data
-4. Performs statistical analysis
-5. Generates appropriate visualizations (bar, pie, scatter, etc.)
-6. Creates workflow: "Data Loading → Analysis → Visualization"
-
-**Server Type:** Any MCP server with data exploration capabilities
-
-</details>
-
-<details>
-<summary><b>🔍 Multi-Server Workflow</b></summary>
-
-> "Compare results from multiple data sources"
-
-<div align="center">
-  <img src="./assets/demo-multi-server.gif" alt="Multi-Server Analysis" width="800"/>
-</div>
-
-**What happens:**
-1. AI coordinates between multiple MCP servers
-2. Loads data from different sources in parallel
-3. Performs cross-server analysis
-4. Generates combined visualizations
-5. Creates complex workflow graph
-6. Tracks all data sources in session context
-
-**Server Type:** Multiple MCP servers (e.g., proteomics + metabolomics, clinical + omics)
+**Server Type:** HTTP MCP server (sleepyrat.ai) with authentication
 
 </details>
 
 ---
 
-## ⚡ Quick Start
+## Quick Start
 
-Get started in **under 2 minutes**:
+Get started in under 2 minutes:
 
-### 🤖 For AI Agents
+### For AI Agents
 
-Direct your favorite coding agent to [Quick Start Guide](#installation) below. Our system prompt is designed to work seamlessly with:
+Direct your favorite coding agent to the Quick Start Guide below. Our system prompt is designed to work seamlessly with:
 - Cursor
 - Windsurf
 - Aider
 - Cline
 
-### 👋 For Humans
+### For Humans
 
 1. **Install dependencies**
    ```bash
@@ -255,39 +240,70 @@ Direct your favorite coding agent to [Quick Start Guide](#installation) below. O
 
 ---
 
-## ✨ Key Features
+## Key Features
 
-### 🔌 Multi-MCP Server Integration
-**What it does:** Connect to unlimited MCP servers simultaneously
-**Why it matters:** Access all your tools in one place - no switching between applications
+### Multi-MCP Server Integration
+
+Connect to unlimited MCP servers simultaneously - access all your tools in one place without switching between applications.
 
 - Automatic tool discovery and namespacing
 - Graceful degradation if servers are unavailable
 - Support for both local (STDIO) and remote (HTTP) servers
 - Pre-configured integrations for popular data platforms
 
-### 📊 Visual Workflow Tracking
-**What it does:** Automatically maps your analysis journey into a visual workflow diagram
-**Why it matters:** Never lose track of your analysis steps - perfect for reproducibility and documentation
+### Visual Workflow Tracking
 
-- Real-time workflow graph generation
-- Phase detection (Data Loading → QC → Analysis → Visualization)
-- Insight extraction for each analysis step
-- Export workflows for presentations and publications
+Automatically maps your analysis journey into a visual workflow diagram. Never lose track of your analysis steps - perfect for reproducibility and documentation.
 
-### 📓 Lab Notebook
-**What it does:** Organizes all visualizations and artifacts in one searchable interface
-**Why it matters:** Keep your analysis organized and accessible
+<div align="center">
+  <img src="./public/gifs/nula_worflow.gif" alt="Interactive Workflow Visualization" width="800"/>
+</div>
 
-- View all generated charts and plots
-- Download artifacts as standalone HTML files
-- Navigate between multiple visualizations
-- Export for presentations with one click
+**Features:**
+- Real-time graph generation - workflow updates as you analyze
+- Phase detection - automatic categorization (Data Loading → QC → Analysis → Visualization)
+- Insight extraction - AI-generated summaries for each analysis step
+- Interactive nodes - click to view details, artifacts, and reasoning
+- Artifact preview - see visualizations directly in the workflow panel
+- Export capabilities - download workflows for presentations and publications
 
-### ✨ Strategic Planning
-**What it does:** AI generates structured analysis plans with actionable steps
-**Why it matters:** Get expert guidance on complex analyses
+The workflow graph is built in real-time from your conversation history. Each tool call becomes a node, and the AI's reasoning determines connections and phases. This creates a complete audit trail of your analysis from start to finish.
 
+### Lab Notebook
+
+Organizes all visualizations and artifacts in one searchable interface. Keep your analysis organized and accessible.
+
+<div align="center">
+  <img src="./public/features/nula_notebook.png" alt="Lab Notebook Gallery" width="800"/>
+</div>
+
+**Gallery features:**
+- Unified view - all visualizations in one scrollable gallery
+- Artifact enumeration - track every chart and plot generated
+- One-click downloads - export as PNG, SVG, or standalone HTML
+- Quick navigation - scroll through your complete analysis history
+- Organized by creation - chronological order maintains analysis flow
+- High-quality exports - publication-ready visualizations
+
+Perfect for reviewing your analysis, creating presentations, or archiving results. The lab notebook ensures no visualization is ever lost and makes it easy to revisit previous analyses.
+
+### Strategic Planning
+
+AI generates structured analysis plans with actionable steps. Get expert guidance on complex analyses.
+
+<div align="center">
+  <img src="./public/features/nula_plan.png" alt="Strategic Analysis Planning" width="800"/>
+</div>
+
+**Planning capabilities:**
+- Structured plans - multi-phase analysis workflows with clear steps
+- Actionable guidance - each step includes specific tools and parameters
+- One-click execution - "Build" button or Cmd+Enter to start execution
+- Plan persistence - automatic caching to filesystem for later reference
+- Iterative refinement - ask for plan modifications before execution
+- Progress tracking - visual indicators as each step completes
+
+**Example plan structure:**
 ```markdown
 <plan title="Metabolomics Data Analysis">
 ## Phase 1: Data Quality Assessment
@@ -300,26 +316,60 @@ Direct your favorite coding agent to [Quick Start Guide](#installation) below. O
 </plan>
 ```
 
-### 💬 Smart Follow-up Suggestions
-**What it does:** Context-aware next-step suggestions after each AI response
-**Why it matters:** Streamlined workflow - one click to continue your analysis
+Perfect for complex multi-step analyses. The AI breaks down your research question into a clear roadmap, ensuring nothing is missed and all steps are executed in the right order.
 
-- Intelligent question suggestions
-- Based on current analysis context
-- Clickable chips for instant execution
+### Smart Follow-up Suggestions
 
-### 🔒 Privacy & Security First
-**What it does:** Enterprise-grade security for your sensitive data
-**Why it matters:** Protect patient data, proprietary research, and confidential information
+Context-aware next-step suggestions after each AI response. Streamlined workflow - one click to continue your analysis.
+
+<div align="center">
+  <img src="./public/features/nula_follow_up.png" alt="Smart Follow-up Suggestions" width="800"/>
+</div>
+
+**Features:**
+- AI-generated - contextually relevant next questions based on results
+- Analysis-aware - suggestions adapt to your current workflow phase
+- One-click execution - click chip or press Enter to send
+- Dynamic updates - new suggestions after each response
+- Exploration guidance - discover insights you might have missed
+- Auto-clear - suggestions vanish when you start typing your own question
+
+After the AI responds, you'll see 2-3 suggested follow-up questions displayed as interactive chips below the input. These guide you through logical next steps in your analysis.
+
+### Real-Time Tool Call Streaming
+
+Watch MCP tool calls execute in real-time as the AI thinks and analyzes. Full transparency into the analysis process - see exactly which tools are being called, when, and with what parameters.
+
+<div align="center">
+  <img src="./public/gifs/nula_tool_calls.gif" alt="Real-Time Tool Call Streaming" width="800"/>
+</div>
+
+**Live streaming features:**
+- Real-time execution tracking - see tool calls appear as they happen
+- Argument inspection - view the exact parameters passed to each tool
+- Status indicators - know when tools are running, completed, or failed
+- Result previews - instant feedback on tool execution outcomes
+- Session continuity - all tool results stay in context for the entire conversation
+
+**Technical implementation:**
+- Powered by Vercel AI SDK's `streamText` with message part streaming
+- Tool invocations streamed as `tool-call` message parts
+- Results streamed back as `tool-result` message parts
+- Zero latency between tool execution and UI updates
+- Enables transparent, reproducible analysis workflows
+
+### Privacy & Security
+
+Enterprise-grade security for your sensitive data. Protect patient data, proprietary research, and confidential information.
 
 - No hardcoded credentials in codebase
 - Dynamic token injection from environment variables
 - User data never exposed in responses
 - Secure authentication handling
 
-### 🎨 Publication-Ready Visualizations
-**What it does:** Professional interactive charts built with Recharts
-**Why it matters:** Generate figures ready for papers and presentations
+### Publication-Ready Visualizations
+
+Professional interactive charts built with Recharts. Generate figures ready for papers and presentations.
 
 - PCA plots, bar charts, line plots, scatter plots
 - Statistical distribution visualizations
@@ -328,13 +378,67 @@ Direct your favorite coding agent to [Quick Start Guide](#installation) below. O
 
 ---
 
-## 🎯 Why NulaLabs?
+## The Zero-Shot Bioanalysis Approach
+
+### How It Works
+
+**Traditional Approach:**
+```
+Fine-tuned Model → Specialized for One Task → Limited Flexibility
+```
+
+**Nula Labs Zero-Shot Approach:**
+```
+Generalist AI Model + Curated MCP Tools → Expert-Level Performance Across All Tasks
+```
+
+### Key Insights
+
+**1. Tools > Training**
+- **Old paradigm**: Train domain-specific models on massive datasets
+- **New paradigm**: Equip generalist models with the right tools
+- **Advantage**: Any off-the-shelf LLM (Claude, GPT-4, Gemini) becomes a bioanalysis expert
+
+**2. MCP as the Enabler**
+- **MCP servers bundle domain expertise** into reusable, composable tools
+- Tools encode best practices, statistical methods, and domain knowledge
+- AI agents orchestrate tools intelligently without domain-specific training
+
+**3. Streamlining Routine Analysis**
+- 80% of bioinformatics work is routine: QC, normalization, differential expression, pathway analysis
+- These tasks don't need custom models - they need **reliable tool execution**
+- Zero-shot agents handle routine work → Bioinformaticians focus on novel research
+
+### Performance Claims
+
+With curated MCP servers, generalist models achieve:
+
+- Comparable accuracy to specialized tools for routine tasks
+- Faster iteration - no retraining needed for new analysis types
+- Better generalization - handles edge cases through reasoning
+- Lower barrier to entry - accessible through natural language
+
+### Infrastructure Vision
+
+**Today**: Client application (this repository)
+**Tomorrow**: Full MCP server ecosystem
+
+Nula Labs is building the infrastructure to make zero-shot bioanalysis easily accessible:
+
+1. Curated MCP tool servers - validated, production-ready analysis capabilities
+2. Optimized orchestration - token-efficient, atomic tool architectures
+3. Reproducible workflows - automatic tracking and documentation
+4. Universal access - any researcher, any model, expert-level analysis
+
+---
+
+## Why Nula Labs?
 
 <table>
 <tr>
 <td width="50%" valign="top">
 
-### 🚀 **Traditional Workflow**
+### Traditional Workflow
 1. Open multiple analysis tools
 2. Copy-paste data between applications
 3. Write custom scripts for each analysis
@@ -342,39 +446,41 @@ Direct your favorite coding agent to [Quick Start Guide](#installation) below. O
 5. Recreate visualizations for publication
 6. Document workflow in separate file
 
-⏱️ **Time:** 2-3 hours per analysis
+**Time:** 2-3 hours per analysis
 
 </td>
 <td width="50%" valign="top">
 
-### ✨ **With NulaLabs**
+### With Nula Labs (Zero-Shot)
 1. Ask a question in natural language
-2. AI coordinates all tools automatically
-3. Analysis runs across multiple servers
+2. AI selects and executes the right tools
+3. Analysis runs across multiple MCP servers
 4. Workflow tracked visually in real-time
 5. Publication-ready charts generated
 6. Complete documentation auto-created
 
-⏱️ **Time:** 5-10 minutes per analysis
+**Time:** 5-10 minutes per analysis
 
 </td>
 </tr>
 </table>
 
-### 📊 Comparison
+### Comparison
 
-| Feature | Traditional Tools | NulaLabs |
-|---------|------------------|----------|
-| **Multi-Server Access** | ❌ Switch between tools | ✅ One interface for all |
-| **Workflow Documentation** | ❌ Manual tracking | ✅ Automatic visual graph |
-| **AI Assistance** | ❌ No guidance | ✅ Expert suggestions |
-| **Reproducibility** | ⚠️ Manual documentation | ✅ Built-in tracking |
-| **Learning Curve** | ⚠️ Steep | ✅ Natural language |
-| **Collaboration** | ⚠️ Share files manually | ✅ Share workflows easily |
+| Feature | Traditional Tools | Specialized Models | Nula Labs (Zero-Shot) |
+|---------|------------------|-------------------|----------------------|
+| **Setup Time** | Hours | Weeks (training) | Minutes |
+| **Domain Expertise Required** | High | Very High | None (natural language) |
+| **Flexibility** | Low | Very Low | High (any task) |
+| **Reproducibility** | Manual | Limited | Automatic |
+| **Multi-Server Access** | Manual switching | Single model | One interface |
+| **Model Updates** | N/A | Retrain required | Automatic (latest LLMs) |
+| **Learning Curve** | Steep | Very Steep | Minimal |
+| **Cost** | Low | Very High | Low |
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -511,7 +617,7 @@ npm run dev
 
 ---
 
-## 📋 Requirements & Compatibility
+## Requirements & Compatibility
 
 ### AI Model Support
 - **Primary:** Anthropic Claude Sonnet 4.5 (recommended)
@@ -545,7 +651,7 @@ NulaLabs works with ANY MCP server that provides:
 
 ---
 
-## 📖 Usage Guide
+## Usage Guide
 
 ### Basic Workflow
 
@@ -611,7 +717,7 @@ Click on a plan to execute it step-by-step.
 
 ---
 
-## 🔬 For CROs & Bioinformaticians
+## For CROs & Bioinformaticians
 
 ### Building MCP Servers for Your Team
 
@@ -684,7 +790,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
 ### Integration Architecture
 
 ```
-Scientists (NulaLabs Client)
+Scientists (Nula Labs Client)
          ↓
     Natural Language Query
          ↓
@@ -740,7 +846,7 @@ Researcher asks: "Run variant calling on sample X"
 
 ---
 
-## ⚙️ Configuration
+## Configuration
 
 ### MCP Server Setup
 
@@ -762,7 +868,7 @@ ANOTHER_SERVER_TOKEN=another_token_here
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ### Tech Stack
 
@@ -778,7 +884,7 @@ ANOTHER_SERVER_TOKEN=another_token_here
 ### Project Structure
 
 ```
-nulalabs/
+nula-client/
 ├── src/
 │   ├── app/
 │   │   ├── api/
@@ -825,7 +931,7 @@ User Input → Next.js API Route → MCP Client Manager → Multiple MCP Servers
 
 ---
 
-## 🛠️ Development
+## Development
 
 ### Development Commands
 
@@ -909,7 +1015,7 @@ export default function CustomViz() {
 
 ---
 
-## 🎨 Visualization Guidelines
+## Visualization Guidelines
 
 ### Allowed Libraries
 - ✅ **recharts** - All components (Bar, Line, Scatter, Pie, Area, etc.)
@@ -973,7 +1079,7 @@ export default function MetaboliteDistribution() {
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 We welcome contributions from the community! Whether you're fixing bugs, adding features, or improving documentation, your help is appreciated.
 
@@ -1026,15 +1132,15 @@ git push origin feature/amazing-feature
 
 ---
 
-## 📄 License
+## License
 
-MIT © NulaLabs Contributors
+MIT © Nula Labs Contributors
 
 See [LICENSE](LICENSE) for full details.
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 Built with amazing open-source technologies:
 
@@ -1050,7 +1156,7 @@ Special thanks to the open-source community!
 
 ---
 
-## 📚 Resources
+## Resources
 
 - **Documentation**
   - [Model Context Protocol Docs](https://modelcontextprotocol.io)
@@ -1062,12 +1168,12 @@ Special thanks to the open-source community!
   - [Issue Tracker](https://github.com/kamilseghrouchni/nula-client/issues)
 
 - **Related Projects**
-  - [mcp-use](https://github.com/mcp-use/mcp-use) - MCP client framework (powers NulaLabs)
+  - [mcp-use](https://github.com/mcp-use/mcp-use) - MCP client framework (powers Nula Labs)
   - [Model Context Protocol](https://modelcontextprotocol.io) - MCP specification
 
 ---
 
-## 💬 Community
+## Community
 
 <div align="center">
 
@@ -1080,28 +1186,28 @@ Join our growing community of researchers and developers!
 
 </div>
 
-### 💡 **Get Help**
+### **Get Help**
 - 📖 [Read the Docs](https://docs.nulalabs.io)
 - 💬 [Ask in Discussions](https://github.com/kamilseghrouchni/nula-client/discussions)
 - 🐛 [Report a Bug](https://github.com/kamilseghrouchni/nula-client/issues/new?template=bug_report.md)
 - ✨ [Request a Feature](https://github.com/kamilseghrouchni/nula-client/issues/new?template=feature_request.md)
 
-### 🤝 **Contribute**
+### **Contribute**
 - 💻 [Submit a PR](https://github.com/kamilseghrouchni/nula-client/pulls)
 - 📝 [Improve Docs](https://github.com/kamilseghrouchni/nula-client/tree/main/docs)
 - 🌐 [Add Translations](https://github.com/kamilseghrouchni/nula-client/tree/main/locales)
 - 🎨 [Share Examples](https://github.com/kamilseghrouchni/nula-client/tree/main/examples)
 
-### 📢 **Stay Updated**
+### **Stay Updated**
 - ⭐ Star this repo to follow development
 - 👀 Watch releases for new features
 - 🔔 Subscribe to our newsletter (coming soon!)
 
 ---
 
-## 🌟 Star History
+## Star History
 
-If you find NulaLabs useful, **give us a star** on GitHub!
+If you find Nula Labs useful, **give us a star** on GitHub!
 
 <div align="center">
 
@@ -1111,7 +1217,7 @@ If you find NulaLabs useful, **give us a star** on GitHub!
 
 ---
 
-## 📈 Project Stats
+## Project Stats
 
 <div align="center">
 
@@ -1125,9 +1231,9 @@ If you find NulaLabs useful, **give us a star** on GitHub!
 
 ---
 
-## 🏆 Contributors
+## Contributors
 
-Thanks to these wonderful people who have contributed to NulaLabs:
+Thanks to these wonderful people who have contributed to Nula Labs:
 
 <div align="center">
 
@@ -1141,7 +1247,7 @@ Thanks to these wonderful people who have contributed to NulaLabs:
 
 **Built with ❤️ for the research community**
 
-*Transform your data analysis workflow today with NulaLabs*
+*Transform your data analysis workflow today with Nula Labs*
 
 <p>
   <a href="https://github.com/kamilseghrouchni/nula-client">⭐ Star on GitHub</a> •

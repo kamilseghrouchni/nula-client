@@ -17,6 +17,10 @@ import { Button } from '@/components/ui/button';
 import { RightPanel } from '@/components/RightPanel';
 import { HiddenArtifactPool } from '@/components/artifact/HiddenArtifactPool';
 import { buildWorkflowGraph } from '@/lib/workflow/workflowBuilder';
+import dynamic from 'next/dynamic';
+
+// Dynamic import to avoid SSR issues with Three.js
+const Beams = dynamic(() => import('@/components/effects/Beams'), { ssr: false });
 
 export default function ChatPage() {
   const [input, setInput] = useState('');
@@ -416,39 +420,117 @@ export default function ChatPage() {
     <div className="flex h-screen relative bg-background">
 
       {messages.length === 0 ? (
-        // Welcome Screen - Full Page
-        <div className="w-full h-full flex items-center justify-center relative">
+        // Welcome Screen - Full Page with 3D Animated Beams
+        <div className="w-full h-full flex items-center justify-center relative overflow-hidden">
+          {/* 3D Animated Beams Background - Multiple colors */}
+          <div className="absolute inset-0 pointer-events-none">
+            {/* Cyan beams */}
+            <div className="absolute inset-0 opacity-60">
+              <Beams
+                beamNumber={10}
+                beamWidth={2.5}
+                beamHeight={15}
+                lightColor="#06D6DB"
+                speed={2}
+                noiseIntensity={1.2}
+                scale={0.2}
+                rotation={-10}
+              />
+            </div>
+            {/* Purple beams */}
+            <div className="absolute inset-0 opacity-50">
+              <Beams
+                beamNumber={8}
+                beamWidth={2.5}
+                beamHeight={15}
+                lightColor="#6B3FA0"
+                speed={1.5}
+                noiseIntensity={1.0}
+                scale={0.18}
+                rotation={5}
+              />
+            </div>
+            {/* Pink beams */}
+            <div className="absolute inset-0 opacity-45">
+              <Beams
+                beamNumber={8}
+                beamWidth={2.5}
+                beamHeight={15}
+                lightColor="#E74C97"
+                speed={1.8}
+                noiseIntensity={1.1}
+                scale={0.22}
+                rotation={15}
+              />
+            </div>
+          </div>
+
+          {/* Particle stars effect overlay */}
+          <div className="absolute inset-0 pointer-events-none" style={{
+            backgroundImage: 'radial-gradient(2px 2px at 20% 30%, rgba(6, 214, 219, 0.3), transparent), radial-gradient(2px 2px at 60% 70%, rgba(231, 76, 151, 0.3), transparent), radial-gradient(1px 1px at 50% 50%, rgba(107, 63, 160, 0.3), transparent), radial-gradient(1px 1px at 80% 10%, rgba(6, 214, 219, 0.2), transparent), radial-gradient(2px 2px at 90% 60%, rgba(231, 76, 151, 0.2), transparent), radial-gradient(1px 1px at 33% 50%, rgba(107, 63, 160, 0.2), transparent), radial-gradient(1px 1px at 70% 40%, rgba(6, 214, 219, 0.2), transparent)',
+            backgroundSize: '200% 200%',
+            animation: 'shimmer 20s ease-in-out infinite'
+          }} />
+
           {/* Welcome Content - Centered */}
-          <div className="text-center px-4 sm:px-8 max-w-6xl mx-auto w-full">
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-foreground mb-4 animate-fade-in-up glow-text">
-              MCP Web Client
+          <div className="text-center px-4 sm:px-8 max-w-6xl mx-auto w-full relative z-10">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-4 animate-fade-in-up" style={{
+              background: 'linear-gradient(135deg, #06D6DB 0%, #E74C97 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              animation: 'fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards, titleGlow 3s ease-in-out infinite'
+            }}>
+              Nula Labs
             </h1>
-            <p className="text-lg sm:text-xl text-muted-foreground mb-12 animate-fade-in-up stagger-1">
-              AI-powered data analysis with Model Context Protocol
+            <p className="text-xl sm:text-2xl md:text-3xl font-semibold mb-3 animate-fade-in-up stagger-1" style={{
+              background: 'linear-gradient(135deg, #06D6DB 0%, #6B3FA0 50%, #E74C97 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}>
+              Zero-Shot Bioanalysis Agents
+            </p>
+            <p className="text-base sm:text-lg text-muted-foreground/80 mb-12 animate-fade-in-up stagger-2 max-w-3xl mx-auto">
+              Empowering generalist AI models to perform specialist bioanalysis through curated MCP tools
             </p>
 
             {/* Centered Input */}
             <form onSubmit={handleSubmit} className="max-w-4xl mx-auto animate-fade-in-up stagger-2">
               <div className="flex gap-3 sm:gap-4">
                 <div className="relative flex-1">
-                  <input
-                    value={input}
-                    onChange={handleInputChange}
-                    disabled={status !== 'ready'}
-                    className="w-full border border-border rounded-lg px-6 py-4 text-base sm:text-lg bg-card backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-ring transition-smooth glow-border disabled:opacity-50 disabled:cursor-not-allowed"
-                    placeholder={suggestedFollowup ? "" : "Ask about your data..."}
-                  />
-                  {/* Show suggested follow-up when input is empty and suggestion exists */}
-                  {!input && suggestedFollowup && status === 'ready' && (
-                    <div className="absolute inset-0 px-6 py-4 text-base sm:text-lg pointer-events-none flex items-center text-muted-foreground/70">
-                      {suggestedFollowup}
-                    </div>
-                  )}
+                  {/* Gradient border wrapper */}
+                  <div className="relative rounded-lg p-[2px]" style={{
+                    background: 'linear-gradient(135deg, #06D6DB 0%, #6B3FA0 50%, #E74C97 100%)',
+                    boxShadow: '0 0 20px rgba(6, 214, 219, 0.3), 0 0 40px rgba(231, 76, 151, 0.2)'
+                  }}>
+                    <input
+                      value={input}
+                      onChange={handleInputChange}
+                      disabled={status !== 'ready'}
+                      className="w-full rounded-lg px-6 py-4 text-base sm:text-lg backdrop-blur-sm focus:outline-none transition-smooth disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{
+                        background: '#1E2940',
+                        border: 'none'
+                      }}
+                      placeholder={suggestedFollowup ? "" : "Ask about your data..."}
+                    />
+                    {/* Show suggested follow-up when input is empty and suggestion exists */}
+                    {!input && suggestedFollowup && status === 'ready' && (
+                      <div className="absolute inset-0 px-6 py-4 text-base sm:text-lg pointer-events-none flex items-center text-muted-foreground/70">
+                        {suggestedFollowup}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <Button
                   type="submit"
                   disabled={(!input.trim() && !suggestedFollowup) || status !== 'ready'}
-                  className="px-6 py-4 text-base sm:text-lg rounded-lg interactive-scale transition-smooth"
+                  className="px-6 py-4 text-base sm:text-lg rounded-lg interactive-scale transition-smooth border-0"
+                  style={{
+                    background: 'linear-gradient(135deg, #06D6DB 0%, #E74C97 100%)',
+                    boxShadow: '0 0 20px rgba(6, 214, 219, 0.4), 0 0 40px rgba(231, 76, 151, 0.3)'
+                  }}
                 >
                   {status === 'streaming' ? (
                     <Loader2 className="w-6 h-6 animate-spin pulse-glow" />
@@ -476,17 +558,30 @@ export default function ChatPage() {
         </div>
       ) : (
         // Chat Area - Expands to full width when panel closed, 50% when panel open
-        <div className={`flex flex-col transition-all duration-300 ${showRightPanel ? 'w-1/2 border-r' : 'w-full'} border-border relative`}>
+        <div className={`flex flex-col transition-all duration-300 ${showRightPanel ? 'w-1/2 border-r' : 'w-full'} border-border relative overflow-hidden`}>
+          {/* Subtle Background Glow Effect for Chat */}
+          <div className="absolute inset-0 pointer-events-none opacity-20">
+            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-bl from-cyan-500/10 via-transparent to-transparent blur-3xl animate-pulse-glow"
+                 style={{ animationDuration: '8s' }} />
+            <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-gradient-to-tr from-pink-500/10 via-transparent to-transparent blur-3xl animate-pulse-glow"
+                 style={{ animationDuration: '10s', animationDelay: '2s' }} />
+          </div>
+
           {/* Header */}
-          <div className="bg-card backdrop-blur-sm border-b border-border px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-5 flex-shrink-0">
+          <div className="bg-card/80 backdrop-blur-sm border-b border-border px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-5 flex-shrink-0 relative z-10">
             <div className={`flex items-center justify-between ${showRightPanel ? '' : 'max-w-7xl mx-auto'}`}>
               <div>
                 <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
                   <span className="inline-block w-2 h-2 sm:w-2.5 sm:h-2.5 bg-primary rounded-full" />
-                  AI Assistant
+                  Nula Labs
                 </h1>
-                <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-                  AI-powered data analysis with MCP tools
+                <p className="text-xs sm:text-sm font-medium mt-1" style={{
+                  background: 'linear-gradient(135deg, #06D6DB 0%, #E74C97 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                }}>
+                  Zero-Shot Bioanalysis Agents
                 </p>
               </div>
               <div className="flex gap-2">

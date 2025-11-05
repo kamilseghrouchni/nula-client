@@ -1,4 +1,5 @@
 import { UIMessage } from 'ai';
+import { isToolPart, normalizeToolPart, getAllToolParts } from '@/lib/utils/messagePartNormalizer';
 
 export interface ToolCallSummary {
   toolName: string;
@@ -51,31 +52,21 @@ export function buildDataContext(messages: UIMessage[]): DataContextSummary {
     // Only look at assistant messages that might contain tool calls, resources, or prompts
     if (message.role === 'assistant' && message.parts) {
       message.parts.forEach((part: any) => {
-        // Check for tool calls (AI SDK v5 format - be permissive with types)
-        const isToolCall = part.type === 'tool-call' ||
-                          part.type === 'dynamic-tool' ||
-                          part.type?.startsWith('tool-') ||
-                          part.toolName; // Has toolName property
+        // Use unified tool detection (works across STDIO, HTTP, and standard transports)
+        if (isToolPart(part)) {
+          const normalized = normalizeToolPart(part);
 
-        if (isToolCall) {
-          const toolName = part.toolName;
-          const args = part.args || {};
-
-          // Skip if toolName is undefined
-          if (!toolName) {
-            console.warn('[Context] Skipping tool call with undefined toolName', { part });
+          if (!normalized) {
+            console.warn('[Context] Failed to normalize tool part', { part });
             return;
           }
 
-          // Find the corresponding tool result
-          const resultPart: any = message.parts?.find((p: any) =>
-            p.type === 'tool-result' && p.toolCallId === part.toolCallId
-          );
+          const { toolName, args, result } = normalized;
 
           const summary: ToolCallSummary = {
             toolName,
             args,
-            result: resultPart?.result || null,
+            result,
             messageId: message.id,
             messageIndex: idx,
           };
@@ -83,7 +74,7 @@ export function buildDataContext(messages: UIMessage[]): DataContextSummary {
           toolCalls.push(summary);
 
           // Extract semantic information about what was loaded
-          const datasetInfo = inferDatasetInfo(toolName, args, resultPart?.result);
+          const datasetInfo = inferDatasetInfo(toolName, args, result);
           if (datasetInfo.dataset) {
             loadedDatasets.add(datasetInfo.dataset);
           }

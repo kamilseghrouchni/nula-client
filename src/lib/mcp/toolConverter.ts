@@ -25,7 +25,35 @@ export async function convertMCPToolsToAISDK(
         `[ToolConverter] Found ${mcpTools.length} tools from server: ${serverName}`
       );
 
-      for (const mcpTool of mcpTools) {
+      // SECURITY: Filter out forbidden tools before making them available to AI
+      const FORBIDDEN_PATTERNS = [
+        /^run_/i,           // Tools starting with 'run_' (e.g., run_python_code, run_analysis)
+        /_python$/i,        // Tools ending with '_python' (e.g., execute_python)
+        /^plot_/i,          // Plotting tools (e.g., plot_data, plot_chart)
+        /^create_chart/i,   // Chart creation tools
+        /^visualize_/i,     // Visualization tools (e.g., visualize_data)
+        /^generate_plot/i,  // Plot generation tools
+      ];
+
+      const filteredTools = mcpTools.filter((tool) => {
+        const isForbidden = FORBIDDEN_PATTERNS.some((pattern) => pattern.test(tool.name));
+
+        if (isForbidden) {
+          console.log(`[ToolConverter] 🚫 FILTERED FORBIDDEN TOOL: ${serverName}__${tool.name}`);
+          console.log(`[ToolConverter] Security: Prevented ${tool.name} from being available to AI`);
+          return false;
+        }
+
+        return true;
+      });
+
+      const filteredCount = mcpTools.length - filteredTools.length;
+      if (filteredCount > 0) {
+        console.log(`[ToolConverter] ⚠️  Filtered ${filteredCount} forbidden tools from ${serverName}`);
+      }
+      console.log(`[ToolConverter] Available tools after filtering: ${filteredTools.length}`);
+
+      for (const mcpTool of filteredTools) {
         // Create namespaced tool name to avoid conflicts between servers
         const toolName = `${serverName}__${mcpTool.name}`;
 
@@ -39,11 +67,26 @@ export async function convertMCPToolsToAISDK(
         // Fix object-type properties that don't have additionalProperties defined
         // Anthropic API requires explicit additionalProperties for object types
         if (schema.properties) {
-          for (const [key, prop] of Object.entries(schema.properties)) {
-            const propSchema = prop as any;
-            if (propSchema.type === 'object' && !propSchema.properties && !propSchema.additionalProperties) {
-              console.log(`[ToolConverter/DEBUG] Adding additionalProperties to ${key}`);
-              propSchema.additionalProperties = true;
+          // If properties object is empty, remove it entirely (Anthropic rejects empty properties)
+          if (Object.keys(schema.properties).length === 0) {
+            console.log(`[ToolConverter/DEBUG] ⚠️  Removing empty properties object from ${toolName}`);
+            delete schema.properties;
+          } else {
+            // Fix nested object-type properties and array items
+            for (const [key, prop] of Object.entries(schema.properties)) {
+              const propSchema = prop as any;
+
+              // Fix object-type parameters
+              if (propSchema.type === 'object' && !propSchema.properties && !propSchema.additionalProperties) {
+                console.log(`[ToolConverter/DEBUG] Adding additionalProperties to ${key}`);
+                propSchema.additionalProperties = true;
+              }
+
+              // Fix array-type parameters with empty items
+              if (propSchema.type === 'array' && propSchema.items && Object.keys(propSchema.items).length === 0) {
+                console.log(`[ToolConverter/DEBUG] ⚠️  Removing empty items object from array ${key}`);
+                delete propSchema.items;
+              }
             }
           }
         }
@@ -93,6 +136,21 @@ export async function convertMCPToolsToAISDK(
           }
 
           console.log(`[ToolConverter/DEBUG] Final schema:`, JSON.stringify(schema));
+        }
+
+        // FINAL FIX: Remove empty properties object if present (Anthropic API requirement)
+        // This must be done AFTER all schema manipulations
+        if (schema.properties && Object.keys(schema.properties).length === 0) {
+          console.log(`[ToolConverter/DEBUG] ⚠️  FINAL FIX: Removing empty properties from ${toolName} before wrapping`);
+          delete schema.properties;
+        }
+
+        // IMPORTANT: For tools with no parameters, DO NOT add additionalProperties
+        // Anthropic API v5 works best with just { type: 'object' } for parameter-less tools
+        // Adding additionalProperties: false can cause "Input should be a valid dictionary" errors
+        if (!schema.properties && (!schema.required || schema.required.length === 0)) {
+          console.log(`[ToolConverter/DEBUG] ℹ️  Tool ${toolName} has no parameters (using simple object schema)`);
+          // Keep schema as { type: 'object' } without additionalProperties
         }
 
         // Wrap schema with jsonSchema() helper
