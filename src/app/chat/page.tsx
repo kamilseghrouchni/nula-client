@@ -30,6 +30,31 @@ export default function ChatPage() {
   // State to hold node insights extracted via LLM (nodeId -> insight)
   const [nodeInsights, setNodeInsights] = useState<Record<string, string>>({});
 
+  // Verify animations CSS is loaded on mount
+  useEffect(() => {
+    console.log('[Chat/Animation] 🎨 Verifying animation CSS is loaded...');
+    const testElement = document.createElement('div');
+    testElement.className = 'animate-fade-in-up glow-border';
+    testElement.style.opacity = '0';
+    document.body.appendChild(testElement);
+
+    // Use setTimeout to ensure styles are computed
+    setTimeout(() => {
+      const computedStyle = window.getComputedStyle(testElement);
+      console.log('[Chat/Animation] Animation property:', computedStyle.animation || 'NONE');
+      console.log('[Chat/Animation] Transition property:', computedStyle.transition || 'NONE');
+      console.log('[Chat/Animation] Box-shadow (glow-border):', computedStyle.boxShadow || 'NONE');
+
+      if (computedStyle.animation && computedStyle.animation !== 'none') {
+        console.log('[Chat/Animation] ✅ CSS animations loaded successfully!');
+      } else {
+        console.error('[Chat/Animation] ❌ CSS animations NOT loaded - animation property is', computedStyle.animation);
+      }
+
+      document.body.removeChild(testElement);
+    }, 100);
+  }, []);
+
   // Extract follow-up question from last assistant message
   useEffect(() => {
     // Only extract when not streaming and messages exist
