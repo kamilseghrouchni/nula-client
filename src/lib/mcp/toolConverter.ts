@@ -36,6 +36,18 @@ export async function convertMCPToolsToAISDK(
         console.log(`[ToolConverter/DEBUG] Processing tool: ${toolName}`);
         console.log(`[ToolConverter/DEBUG] Original schema:`, JSON.stringify(schema));
 
+        // Fix object-type properties that don't have additionalProperties defined
+        // Anthropic API requires explicit additionalProperties for object types
+        if (schema.properties) {
+          for (const [key, prop] of Object.entries(schema.properties)) {
+            const propSchema = prop as any;
+            if (propSchema.type === 'object' && !propSchema.properties && !propSchema.additionalProperties) {
+              console.log(`[ToolConverter/DEBUG] Adding additionalProperties to ${key}`);
+              propSchema.additionalProperties = true;
+            }
+          }
+        }
+
         if (serverName === 'sleepyrat' && schema.properties?.token) {
           console.log(`[ToolConverter] ⚠️  Removing token parameter from ${toolName} schema`);
 
@@ -51,10 +63,19 @@ export async function convertMCPToolsToAISDK(
           const hasProperties = Object.keys(filteredProperties).length > 0;
 
           if (hasProperties) {
-            // Schema with properties
+            // Schema with properties - also fix object-type params here
+            const fixedProperties = { ...filteredProperties };
+            for (const [key, prop] of Object.entries(fixedProperties)) {
+              const propSchema = prop as any;
+              if (propSchema.type === 'object' && !propSchema.properties && !propSchema.additionalProperties) {
+                console.log(`[ToolConverter/DEBUG] Adding additionalProperties to filtered property: ${key}`);
+                propSchema.additionalProperties = true;
+              }
+            }
+
             schema = {
               type: 'object',
-              properties: filteredProperties,
+              properties: fixedProperties,
               ...(filteredRequired.length > 0 && { required: filteredRequired })
             };
             console.log(`[ToolConverter/DEBUG] ✅ Created schema WITH properties`);
