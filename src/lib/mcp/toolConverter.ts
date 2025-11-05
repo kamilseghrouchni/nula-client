@@ -68,7 +68,7 @@ export async function convertMCPToolsToAISDK(
             for (const [key, prop] of Object.entries(fixedProperties)) {
               const propSchema = prop as any;
               if (propSchema.type === 'object' && !propSchema.properties && !propSchema.additionalProperties) {
-                console.log(`[ToolConverter/DEBUG] Adding additionalProperties to filtered property: ${key}`);
+                console.log(`[ToolConverter/DEBUG] ⚠️  FIXING object-type property: ${key} (adding additionalProperties: true)`);
                 propSchema.additionalProperties = true;
               }
             }
@@ -78,7 +78,12 @@ export async function convertMCPToolsToAISDK(
               properties: fixedProperties,
               ...(filteredRequired.length > 0 && { required: filteredRequired })
             };
-            console.log(`[ToolConverter/DEBUG] ✅ Created schema WITH properties`);
+            console.log(`[ToolConverter/DEBUG] ✅ Created schema WITH properties for ${toolName}`);
+
+            // CRITICAL DEBUG: Log the EXACT final schema for run_python_code
+            if (mcpTool.name === 'run_python_code') {
+              console.log(`[ToolConverter/CRITICAL] 🔍 run_python_code FINAL SCHEMA:`, JSON.stringify(schema, null, 2));
+            }
           } else {
             // For tools with no parameters, use the simplest valid schema
             schema = {
