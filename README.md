@@ -9,6 +9,9 @@
   </p>
 
   <p align="center">
+    <a href="https://github.com/kristerus/nulalabs/actions/workflows/ci.yml">
+      <img src="https://img.shields.io/github/actions/workflow/status/kristerus/nulalabs/ci.yml?branch=main&style=for-the-badge&logo=github-actions&label=CI" alt="CI Status"/>
+    </a>
     <a href="https://github.com/kristerus/nulalabs/stargazers">
       <img src="https://img.shields.io/github/stars/kristerus/nulalabs?style=for-the-badge&logo=github&color=yellow" alt="GitHub Stars"/>
     </a>
