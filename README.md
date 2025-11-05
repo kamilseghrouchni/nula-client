@@ -427,7 +427,9 @@ Create `mcp-config.json` at the project root (copy from `mcp-config.example.json
 }
 ```
 
-**Local STDIO Server Example:**
+**Local STDIO Server Examples:**
+
+*JavaScript/TypeScript Server (via npx):*
 ```json
 {
   "mcpServers": {
@@ -442,6 +444,37 @@ Create `mcp-config.json` at the project root (copy from `mcp-config.example.json
   }
 }
 ```
+
+*Python Server (via uv):*
+```json
+{
+  "mcpServers": {
+    "my-python-server": {
+      "command": "uv",
+      "args": ["run", "/absolute/path/to/server.py"],
+      "transport": "stdio",
+      "env": {
+        "PYTHONPATH": "/path/to/your/modules"
+      }
+    }
+  }
+}
+```
+
+*Python Server (via python directly):*
+```json
+{
+  "mcpServers": {
+    "stats-server": {
+      "command": "python",
+      "args": ["-m", "my_analysis_server"],
+      "transport": "stdio"
+    }
+  }
+}
+```
+
+**Important:** Always use **absolute paths** for local servers to avoid path resolution issues.
 
 **Multiple Servers Example:**
 ```json
