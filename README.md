@@ -224,8 +224,8 @@ Direct your favorite coding agent to [Quick Start Guide](#installation) below. O
 
 1. **Install dependencies**
    ```bash
-   git clone https://github.com/kristerus/nulalabs.git
-   cd nulalabs
+   git clone https://github.com/kamilseghrouchni/nula-client.git
+   cd nula-client
    npm install
    ```
 
@@ -386,8 +386,8 @@ Direct your favorite coding agent to [Quick Start Guide](#installation) below. O
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/nulalabs.git
-cd nulalabs
+git clone https://github.com/kamilseghrouchni/nula-client.git
+cd nula-client
 
 # Install dependencies
 npm install
@@ -989,8 +989,8 @@ We welcome contributions from the community! Whether you're fixing bugs, adding 
 1. **Fork the repository**
 
 ```bash
-git clone https://github.com/yourusername/nulalabs.git
-cd nulalabs
+git clone https://github.com/kamilseghrouchni/nula-client.git
+cd nula-client
 ```
 
 2. **Create a feature branch**
@@ -1058,8 +1058,8 @@ Special thanks to the open-source community!
   - [Anthropic API Docs](https://docs.anthropic.com)
 
 - **Community**
-  - [GitHub Discussions](https://github.com/yourusername/nulalabs/discussions)
-  - [Issue Tracker](https://github.com/yourusername/nulalabs/issues)
+  - [GitHub Discussions](https://github.com/kamilseghrouchni/nula-client/discussions)
+  - [Issue Tracker](https://github.com/kamilseghrouchni/nula-client/issues)
 
 - **Related Projects**
   - [mcp-use](https://github.com/mcp-use/mcp-use) - MCP client framework (powers NulaLabs)
@@ -1073,8 +1073,8 @@ Special thanks to the open-source community!
 
 Join our growing community of researchers and developers!
 
-[![GitHub Discussions](https://img.shields.io/badge/Discussions-Join-blue?style=for-the-badge&logo=github)](https://github.com/kristerus/nulalabs/discussions)
-[![GitHub Issues](https://img.shields.io/badge/Issues-Report-red?style=for-the-badge&logo=github)](https://github.com/kristerus/nulalabs/issues)
+[![GitHub Discussions](https://img.shields.io/badge/Discussions-Join-blue?style=for-the-badge&logo=github)](https://github.com/kamilseghrouchni/nula-client/discussions)
+[![GitHub Issues](https://img.shields.io/badge/Issues-Report-red?style=for-the-badge&logo=github)](https://github.com/kamilseghrouchni/nula-client/issues)
 [![Twitter Follow](https://img.shields.io/twitter/follow/nulalabs?style=for-the-badge&logo=twitter&color=1DA1F2)](https://twitter.com/nulalabs)
 [![Discord](https://img.shields.io/badge/Discord-Join-5865F2?style=for-the-badge&logo=discord)](https://discord.gg/nulalabs)
 
@@ -1082,15 +1082,15 @@ Join our growing community of researchers and developers!
 
 ### 💡 **Get Help**
 - 📖 [Read the Docs](https://docs.nulalabs.io)
-- 💬 [Ask in Discussions](https://github.com/kristerus/nulalabs/discussions)
-- 🐛 [Report a Bug](https://github.com/kristerus/nulalabs/issues/new?template=bug_report.md)
-- ✨ [Request a Feature](https://github.com/kristerus/nulalabs/issues/new?template=feature_request.md)
+- 💬 [Ask in Discussions](https://github.com/kamilseghrouchni/nula-client/discussions)
+- 🐛 [Report a Bug](https://github.com/kamilseghrouchni/nula-client/issues/new?template=bug_report.md)
+- ✨ [Request a Feature](https://github.com/kamilseghrouchni/nula-client/issues/new?template=feature_request.md)
 
 ### 🤝 **Contribute**
-- 💻 [Submit a PR](https://github.com/kristerus/nulalabs/pulls)
-- 📝 [Improve Docs](https://github.com/kristerus/nulalabs/tree/main/docs)
-- 🌐 [Add Translations](https://github.com/kristerus/nulalabs/tree/main/locales)
-- 🎨 [Share Examples](https://github.com/kristerus/nulalabs/tree/main/examples)
+- 💻 [Submit a PR](https://github.com/kamilseghrouchni/nula-client/pulls)
+- 📝 [Improve Docs](https://github.com/kamilseghrouchni/nula-client/tree/main/docs)
+- 🌐 [Add Translations](https://github.com/kamilseghrouchni/nula-client/tree/main/locales)
+- 🎨 [Share Examples](https://github.com/kamilseghrouchni/nula-client/tree/main/examples)
 
 ### 📢 **Stay Updated**
 - ⭐ Star this repo to follow development
@@ -1105,7 +1105,7 @@ If you find NulaLabs useful, **give us a star** on GitHub!
 
 <div align="center">
 
-[![Star History Chart](https://api.star-history.com/svg?repos=kristerus/nulalabs&type=Date)](https://star-history.com/#kristerus/nulalabs&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=kamilseghrouchni/nula-client&type=Date)](https://star-history.com/#kamilseghrouchni/nula-client&Date)
 
 </div>
 
@@ -1115,11 +1115,11 @@ If you find NulaLabs useful, **give us a star** on GitHub!
 
 <div align="center">
 
-![GitHub commit activity](https://img.shields.io/github/commit-activity/m/kristerus/nulalabs?style=flat-square)
-![GitHub last commit](https://img.shields.io/github/last-commit/kristerus/nulalabs?style=flat-square)
-![GitHub contributors](https://img.shields.io/github/contributors/kristerus/nulalabs?style=flat-square)
-![GitHub issues](https://img.shields.io/github/issues/kristerus/nulalabs?style=flat-square)
-![GitHub pull requests](https://img.shields.io/github/issues-pr/kristerus/nulalabs?style=flat-square)
+![GitHub commit activity](https://img.shields.io/github/commit-activity/m/kamilseghrouchni/nula-client?style=flat-square)
+![GitHub last commit](https://img.shields.io/github/last-commit/kamilseghrouchni/nula-client?style=flat-square)
+![GitHub contributors](https://img.shields.io/github/contributors/kamilseghrouchni/nula-client?style=flat-square)
+![GitHub issues](https://img.shields.io/github/issues/kamilseghrouchni/nula-client?style=flat-square)
+![GitHub pull requests](https://img.shields.io/github/issues-pr/kamilseghrouchni/nula-client?style=flat-square)
 
 </div>
 
@@ -1131,7 +1131,7 @@ Thanks to these wonderful people who have contributed to NulaLabs:
 
 <div align="center">
 
-[![Contributors](https://contrib.rocks/image?repo=kristerus/nulalabs)](https://github.com/kristerus/nulalabs/graphs/contributors)
+[![Contributors](https://contrib.rocks/image?repo=kamilseghrouchni/nula-client)](https://github.com/kamilseghrouchni/nula-client/graphs/contributors)
 
 </div>
 
@@ -1144,7 +1144,7 @@ Thanks to these wonderful people who have contributed to NulaLabs:
 *Transform your data analysis workflow today with NulaLabs*
 
 <p>
-  <a href="https://github.com/kristerus/nulalabs">⭐ Star on GitHub</a> •
+  <a href="https://github.com/kamilseghrouchni/nula-client">⭐ Star on GitHub</a> •
   <a href="https://docs.nulalabs.io">📖 Read the Docs</a> •
   <a href="https://twitter.com/nulalabs">🐦 Follow on Twitter</a>
 </p>
