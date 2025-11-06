@@ -27,7 +27,7 @@ export interface NormalizedToolPart {
   /** Tool execution result (if available) */
   result: any | null;
   /** Tool execution state */
-  state: 'input-available' | 'executing' | 'completed' | 'error';
+  state: 'input-available' | 'input-streaming' | 'output-available' | 'output-error';
   /** Original part type for debugging */
   originalType: string;
   /** Source transport type */
@@ -89,8 +89,25 @@ export function normalizeToolPart(part: any): NormalizedToolPart | null {
   // Extract result (different property names across transports)
   const result = part.result || part.output || null;
 
-  // Extract state (normalize to standard values)
-  const state = part.state || (result ? 'completed' : 'input-available');
+  // Extract state (normalize to AI SDK ToolUIPart states)
+  let state: NormalizedToolPart['state'];
+  const rawState = part.state;
+
+  // Map MCP states to AI SDK states
+  if (rawState === 'executing') {
+    state = 'input-streaming';
+  } else if (rawState === 'completed') {
+    state = 'output-available';
+  } else if (rawState === 'error') {
+    state = 'output-error';
+  } else if (rawState === 'input-available' || rawState === 'input-streaming') {
+    state = rawState;
+  } else if (rawState === 'output-available' || rawState === 'output-error') {
+    state = rawState;
+  } else {
+    // Default fallback
+    state = result ? 'output-available' : 'input-available';
+  }
 
   return {
     toolName,
@@ -161,7 +178,7 @@ export function getAllToolParts(message: any): NormalizedToolPart[] {
 
   return message.parts
     .map(normalizeToolPart)
-    .filter((p): p is NormalizedToolPart => p !== null);
+    .filter((p: NormalizedToolPart | null): p is NormalizedToolPart => p !== null);
 }
 
 /**
