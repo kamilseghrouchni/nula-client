@@ -7,7 +7,10 @@ import {
   createUIMessageStream,
   createUIMessageStreamResponse
 } from 'ai';
-import { getAllTools } from '@/lib/mcp/multiClient';
+import { getMCPClient } from '@/lib/mcp/mcpClient';
+import { convertMCPToolsToAISDK } from '@/lib/mcp/toolConverter';
+import { createSyntheticTools } from '@/lib/mcp/syntheticTools';
+import { listAllPrompts, formatPromptsForDisplay } from '@/lib/mcp/promptManager';
 import { SYSTEM_PROMPT } from '@/lib/prompts/system';
 import { buildDataContext, formatContextForPrompt } from '@/lib/context/dataContext';
 import { shouldSummarize, calculateContextSize } from '@/lib/utils/tokenCounter';
@@ -21,9 +24,33 @@ export async function POST(request: Request) {
     const json = await request.json();
     const { messages } = json as { messages: UIMessage[] };
 
-    // Get tools from all MCP servers (cached after first call)
-    const tools = await getAllTools();
-    console.log('[MCP] Loaded tools from all servers:', Object.keys(tools).length);
+    // Get MCP client and convert tools to AI SDK format
+    const mcpClient = await getMCPClient();
+    const sessions = mcpClient.getAllActiveSessions();
+    const tools = await convertMCPToolsToAISDK(sessions);
+    console.log('[Chat/DEBUG] 📦 Loaded tools from all servers:', Object.keys(tools).length);
+
+    // Debug: Log Sleepyrat tool schemas
+    const sleepyratTools = Object.entries(tools).filter(([name]) => name.startsWith('sleepyrat__'));
+    console.log('[Chat/DEBUG] Sleepyrat tools count:', sleepyratTools.length);
+    if (sleepyratTools.length > 0) {
+      const firstTool = sleepyratTools[0];
+      console.log('[Chat/DEBUG] Sample Sleepyrat tool:', firstTool[0]);
+      console.log('[Chat/DEBUG] Sample schema:', JSON.stringify(firstTool[1].inputSchema));
+    }
+
+    // Add synthetic tools for MCP resources and prompts
+    const syntheticTools = await createSyntheticTools(sessions);
+    Object.assign(tools, syntheticTools);
+    console.log('[Chat] 🔧 Added', Object.keys(syntheticTools).length, 'synthetic tools for MCP resources/prompts');
+
+    // List available prompts for context
+    const promptsList = await listAllPrompts(sessions);
+    const promptsContext = promptsList.totalCount > 0
+      ? formatPromptsForDisplay(promptsList.prompts)
+      : '';
+    console.log('[Chat] 📝 Found', promptsList.totalCount, 'prompts from MCP servers');
+
     let stepCount = 0;
 
     // Build data context from message history
@@ -53,7 +80,7 @@ export async function POST(request: Request) {
       execute: async ({ writer }) => {
 
         // Build system prompt first (needed for token calculation)
-        const systemPrompt = `${contextPrompt ? contextPrompt + '\n\n' + '='.repeat(80) + '\n\n' : ''}${SYSTEM_PROMPT}
+        const systemPrompt = `${promptsContext ? promptsContext + '\n\n' + '='.repeat(80) + '\n\n' : ''}${contextPrompt ? contextPrompt + '\n\n' + '='.repeat(80) + '\n\n' : ''}${SYSTEM_PROMPT}
 
 CRITICAL INSTRUCTION: You MUST follow this workflow:
 1. Call tools to get data
@@ -62,6 +89,12 @@ CRITICAL INSTRUCTION: You MUST follow this workflow:
 4. Provide a complete answer to the user
 
 NEVER stop after just calling tools. Always explain what you learned from the tool results.
+
+**MCP Resources & Prompts:**
+- Use mcp__list_resources to discover available data sources (schemas, metadata, documents)
+- Use mcp__read_resource to access resource content when needed
+- Use mcp__list_prompts to see available analysis templates
+- Use mcp__get_prompt to retrieve specific analysis workflows
 
 ${contextPrompt ? '\n\nREMINDER: Check the "Session Data Context" section above BEFORE calling any tools!' : ''}`;
 
@@ -118,8 +151,28 @@ ${contextPrompt ? '\n\nREMINDER: Check the "Session Data Context" section above 
           };
         }
 
+        // CRITICAL DEBUG: Write ALL tool schemas to file for inspection
+        const fs = await import('fs/promises');
+        const toolSchemas = Object.entries(tools).map(([name, tool]) => ({
+          name,
+          schema: tool.inputSchema
+        }));
+        await fs.writeFile(
+          '/tmp/tool_schemas_debug.json',
+          JSON.stringify(toolSchemas, null, 2)
+        );
+        console.log('[Chat/CRITICAL] 📝 Written', toolSchemas.length, 'tool schemas to /tmp/tool_schemas_debug.json');
+
+        // DEBUG: Log the messages being sent to Anthropic
+        console.log('[Chat/DEBUG] 📤 Messages being sent to Anthropic:');
+        await fs.writeFile(
+          '/tmp/messages_debug.json',
+          JSON.stringify(messagesWithCaching, null, 2)
+        );
+        console.log('[Chat/DEBUG] 📝 Written messages to /tmp/messages_debug.json');
+
         const result = streamText({
-          model: anthropic('claude-sonnet-4-5'),
+          model: anthropic('claude-haiku-4-5'),
           messages: messagesWithCaching,
           tools,
           stopWhen: stepCountIs(25),

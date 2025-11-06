@@ -41,13 +41,13 @@ export function RightPanel({
   // If only one type of content, show it with close button
   if (contentCount === 1) {
     return (
-      <div className="h-full flex flex-col bg-background border-l border-border">
+      <div className="h-full flex flex-col bg-background border-l border-border panel-enter">
         {/* Header with close button */}
         <div className="flex items-center justify-end border-b border-border px-2 py-2 flex-shrink-0">
           {onClose && (
             <button
               onClick={onClose}
-              className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors rounded"
+              className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-smooth interactive-scale rounded"
               aria-label="Close panel"
               title="Hide panel"
             >
@@ -67,14 +67,14 @@ export function RightPanel({
 
   // Multiple types exist - show tabbed interface
   return (
-    <div className="h-full flex flex-col bg-background border-l border-border">
+    <div className="h-full flex flex-col bg-background border-l border-border panel-enter">
       {/* Tab Bar */}
       <div className="flex items-center border-b flex-shrink-0">
         {hasPlans && (
           <button
             onClick={() => setActiveTab("plans")}
             className={cn(
-              "flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors border-b-2",
+              "flex items-center gap-2 px-4 py-3 text-sm font-medium transition-smooth border-b-2 interactive-scale",
               activeTab === "plans"
                 ? "border-primary text-foreground"
                 : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted"
@@ -88,7 +88,7 @@ export function RightPanel({
           <button
             onClick={() => setActiveTab("workflow")}
             className={cn(
-              "flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors border-b-2",
+              "flex items-center gap-2 px-4 py-3 text-sm font-medium transition-smooth border-b-2 interactive-scale",
               activeTab === "workflow"
                 ? "border-primary text-foreground"
                 : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted"
@@ -102,7 +102,7 @@ export function RightPanel({
           <button
             onClick={() => setActiveTab("notebook")}
             className={cn(
-              "flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors border-b-2",
+              "flex items-center gap-2 px-4 py-3 text-sm font-medium transition-smooth border-b-2 interactive-scale",
               activeTab === "notebook"
                 ? "border-primary text-foreground"
                 : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted"
@@ -116,7 +116,7 @@ export function RightPanel({
         {onClose && (
           <button
             onClick={onClose}
-            className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors rounded mr-1"
+            className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-smooth interactive-scale rounded mr-1"
             aria-label="Close panel"
             title="Hide panel"
           >

@@ -1,6 +1,9 @@
 import { TextContent } from './TextContent';
 import { ToolCall } from './ToolCall';
 import { ToolResult } from './ToolResult';
+import { ResourceFetch } from './ResourceFetch';
+import { PromptFetch } from './PromptFetch';
+import type { ResourceFetchPart, PromptFetchPart } from '@/lib/types';
 
 interface MessageProps {
   role: 'user' | 'assistant';
@@ -56,7 +59,25 @@ export function Message({ role, parts }: MessageProps) {
                 />
               );
             }
-            
+
+            if (part.type === 'resource-fetch') {
+              return (
+                <ResourceFetch
+                  key={idx}
+                  {...(part as ResourceFetchPart)}
+                />
+              );
+            }
+
+            if (part.type === 'prompt-fetch') {
+              return (
+                <PromptFetch
+                  key={idx}
+                  {...(part as PromptFetchPart)}
+                />
+              );
+            }
+
             return null;
           })}
         </div>

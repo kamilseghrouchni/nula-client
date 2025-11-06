@@ -1,4 +1,5 @@
 import { UIMessage } from 'ai';
+import { isToolPart, normalizeToolPart, getAllToolParts } from '@/lib/utils/messagePartNormalizer';
 
 export interface ToolCallSummary {
   toolName: string;
@@ -9,8 +10,28 @@ export interface ToolCallSummary {
   timestamp?: number;
 }
 
+export interface ResourceFetchSummary {
+  serverName: string;
+  uri: string;
+  name: string;
+  messageId: string;
+  messageIndex: number;
+  timestamp?: number;
+}
+
+export interface PromptFetchSummary {
+  serverName: string;
+  promptName: string;
+  args: Record<string, any>;
+  messageId: string;
+  messageIndex: number;
+  timestamp?: number;
+}
+
 export interface DataContextSummary {
   toolCalls: ToolCallSummary[];
+  resourceFetches: ResourceFetchSummary[];
+  promptFetches: PromptFetchSummary[];
   loadedDatasets: string[];
   availableInformation: string[];
   lastUpdated: number;
@@ -22,38 +43,30 @@ export interface DataContextSummary {
  */
 export function buildDataContext(messages: UIMessage[]): DataContextSummary {
   const toolCalls: ToolCallSummary[] = [];
+  const resourceFetches: ResourceFetchSummary[] = [];
+  const promptFetches: PromptFetchSummary[] = [];
   const loadedDatasets = new Set<string>();
   const availableInfo = new Set<string>();
 
   messages.forEach((message, idx) => {
-    // Only look at assistant messages that might contain tool calls
+    // Only look at assistant messages that might contain tool calls, resources, or prompts
     if (message.role === 'assistant' && message.parts) {
       message.parts.forEach((part: any) => {
-        // Check for tool calls (AI SDK v5 format - be permissive with types)
-        const isToolCall = part.type === 'tool-call' ||
-                          part.type === 'dynamic-tool' ||
-                          part.type?.startsWith('tool-') ||
-                          part.toolName; // Has toolName property
+        // Use unified tool detection (works across STDIO, HTTP, and standard transports)
+        if (isToolPart(part)) {
+          const normalized = normalizeToolPart(part);
 
-        if (isToolCall) {
-          const toolName = part.toolName;
-          const args = part.args || {};
-
-          // Skip if toolName is undefined
-          if (!toolName) {
-            console.warn('[Context] Skipping tool call with undefined toolName', { part });
+          if (!normalized) {
+            console.warn('[Context] Failed to normalize tool part', { part });
             return;
           }
 
-          // Find the corresponding tool result
-          const resultPart: any = message.parts?.find((p: any) =>
-            p.type === 'tool-result' && p.toolCallId === part.toolCallId
-          );
+          const { toolName, args, result } = normalized;
 
           const summary: ToolCallSummary = {
             toolName,
             args,
-            result: resultPart?.result || null,
+            result,
             messageId: message.id,
             messageIndex: idx,
           };
@@ -61,11 +74,41 @@ export function buildDataContext(messages: UIMessage[]): DataContextSummary {
           toolCalls.push(summary);
 
           // Extract semantic information about what was loaded
-          const datasetInfo = inferDatasetInfo(toolName, args, resultPart?.result);
+          const datasetInfo = inferDatasetInfo(toolName, args, result);
           if (datasetInfo.dataset) {
             loadedDatasets.add(datasetInfo.dataset);
           }
           datasetInfo.information.forEach(info => availableInfo.add(info));
+        }
+
+        // Check for resource fetches
+        if (part.type === 'resource-fetch' && part.status === 'complete') {
+          const resourceSummary: ResourceFetchSummary = {
+            serverName: part.serverName,
+            uri: part.uri,
+            name: part.resource?.name || part.uri.split('/').pop() || part.uri,
+            messageId: message.id,
+            messageIndex: idx,
+          };
+          resourceFetches.push(resourceSummary);
+
+          // Track as available information
+          availableInfo.add(`Resource: ${resourceSummary.name} from ${part.serverName}`);
+        }
+
+        // Check for prompt fetches
+        if (part.type === 'prompt-fetch' && part.status === 'complete') {
+          const promptSummary: PromptFetchSummary = {
+            serverName: part.serverName,
+            promptName: part.promptName,
+            args: part.args || {},
+            messageId: message.id,
+            messageIndex: idx,
+          };
+          promptFetches.push(promptSummary);
+
+          // Track as available information
+          availableInfo.add(`Prompt: ${part.promptName} from ${part.serverName}`);
         }
       });
     }
@@ -73,6 +116,8 @@ export function buildDataContext(messages: UIMessage[]): DataContextSummary {
 
   return {
     toolCalls,
+    resourceFetches,
+    promptFetches,
     loadedDatasets: Array.from(loadedDatasets),
     availableInformation: Array.from(availableInfo),
     lastUpdated: Date.now(),
@@ -137,23 +182,41 @@ function inferDatasetInfo(
  * Optimized for token reduction
  */
 export function formatContextForPrompt(context: DataContextSummary): string {
-  if (context.toolCalls.length === 0) {
+  if (context.toolCalls.length === 0 && context.resourceFetches.length === 0 && context.promptFetches.length === 0) {
     return ''; // No context to add yet
   }
 
   const sections: string[] = [];
 
-  sections.push('## Previous Data Loaded\n');
+  sections.push('## Session Data Context\n');
 
   // Concise dataset list
   if (context.loadedDatasets.length > 0) {
-    sections.push(`Datasets: ${context.loadedDatasets.join(', ')}`);
+    sections.push(`**Datasets:** ${context.loadedDatasets.join(', ')}`);
+  }
+
+  // MCP Resources fetched
+  if (context.resourceFetches.length > 0) {
+    const resourceList = context.resourceFetches
+      .map(r => `${r.name} (${r.serverName})`)
+      .slice(-3) // Most recent 3
+      .join(', ');
+    sections.push(`**Resources:** ${resourceList}`);
+  }
+
+  // MCP Prompts used
+  if (context.promptFetches.length > 0) {
+    const promptList = context.promptFetches
+      .map(p => `${p.promptName} (${p.serverName})`)
+      .slice(-3) // Most recent 3
+      .join(', ');
+    sections.push(`**Prompts:** ${promptList}`);
   }
 
   // Concise info list (limit to 3 most recent)
   if (context.availableInformation.length > 0) {
     const recentInfo = context.availableInformation.slice(-3);
-    sections.push(`Info: ${recentInfo.join(', ')}`);
+    sections.push(`**Available Info:** ${recentInfo.join(', ')}`);
   }
 
   // Condensed instructions

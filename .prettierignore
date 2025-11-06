@@ -1,0 +1,45 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.*
+
+# Build outputs
+.next
+out
+build
+dist
+
+# Cache
+.turbo
+.cache
+
+# Environment
+.env*
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+
+# IDE
+.vscode
+.idea
+
+# Git
+.git
+
+# MCP config (user-specific)
+mcp-config.json
+
+# Package manager
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Next.js
+.next/
+next-env.d.ts
+
+# TypeScript
+*.tsbuildinfo
