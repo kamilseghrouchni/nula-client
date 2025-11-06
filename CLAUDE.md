@@ -464,6 +464,19 @@ Debug endpoint for Sleepyrat integration:
 - Validates token fetching
 - Returns server status
 
+## Commit and PR Message Guidelines
+
+**NEVER include Claude attribution in commit messages or PR descriptions**
+
+When creating commits or pull requests, DO NOT add any AI attribution markers:
+
+❌ DO NOT include:
+- `🤖 Generated with [Claude Code](https://claude.com/claude-code)`
+- `Co-Authored-By: Claude <noreply@anthropic.com>`
+- Any other Claude/AI attribution markers
+
+Keep commit messages and PR descriptions clean and professional without any AI attribution. Focus on describing what changed and why, not how the code was generated.
+
 ## Development Notes
 
 ### Architecture Patterns
