@@ -42,8 +42,7 @@
     <a href="#-quick-start">Quick Start</a> •
     <a href="#-demos">Demos</a> •
     <a href="#-features">Features</a> •
-    <a href="#-documentation">Documentation</a> •
-    <a href="#-community">Community</a>
+    <a href="#-documentation">Documentation</a>
   </p>
 
 </div>
@@ -166,14 +165,14 @@ See Nula Labs in action with real research platforms and biological data:
 <details open>
 <summary><b>SleepyRat Integration - Sleep Stage Scoring (EPFL Research)</b></summary>
 
-> "Analyze my sleep recording data and show me the vigilance state distribution"
+> "Analyze my eeg sleep data and visualize result"
 
 <div align="center">
   <img src="./public/gifs/sleepyrat.gif" alt="SleepyRat Integration Workflow" width="800"/>
 </div>
 
 **What happens:**
-1. AI connects to SleepyRat MCP server (EPFL sleep research platform)
+1. AI connects to SleepyRat MCP server (ETHZ sleep research platform)
 2. Lists available projects and recordings
 3. Retrieves sleep stage scoring results (Wake, NREM, REM)
 4. Performs statistical analysis on sleep patterns
@@ -181,7 +180,7 @@ See Nula Labs in action with real research platforms and biological data:
 6. Creates comprehensive workflow: "Data Access → Analysis → Visualization"
 
 **Real-world impact:**
-- **Platform:** [SleepyRat](https://sleepyrat.ai) - Web platform for automated animal sleep scoring (EPFL)
+- **Platform:** [SleepyRat](https://sleepyrat.ai) - Web platform for automated animal sleep scoring (ETHZ) - Thanks to @[AmiBeuret](https://amibeuret.com/) 
 - **Research use:** 50+ publications cite this platform for sleep research
 - **Analysis:** EEG/EMG signal processing, vigilance state classification, sleep dynamics
 - **Integration:** Natural language queries to research-grade sleep analysis tools
@@ -429,6 +428,32 @@ Nula Labs is building the infrastructure to make zero-shot bioanalysis easily ac
 2. Optimized orchestration - token-efficient, atomic tool architectures
 3. Reproducible workflows - automatic tracking and documentation
 4. Universal access - any researcher, any model, expert-level analysis
+
+---
+
+## What's Next for Nula Labs
+
+### 1. Multi-Model Provider Support
+- **UI Provider Switcher**: Add interface for selecting different AI providers (Claude, GPT-4, Gemini, etc.)
+- **Provider-Agnostic Architecture**: Support any model with tool-use capabilities
+- **Seamless Switching**: Change providers without reconfiguring MCP servers
+- **Current Status**: Claude Sonnet 4.5 (best tool-use performance)
+
+### 2. MCP Cookiecutter Template
+- **Production-Ready Template**: Publish cookiecutter for rapid MCP server creation
+- **Best Practices**: Security, error handling, documentation, testing patterns
+- **Quick Start**: Researchers expose their analysis functions in minutes, not days
+- **Examples Included**: Reference implementations for common analysis tasks
+
+### 3. Domain-Specific MCP Server Library
+Rolling out curated MCP servers for different research fields:
+- **Proteomics**: Protein identification, quantification, PTM analysis
+- **Genomics**: Variant calling, gene expression, pathway analysis
+- **Clinical Data**: EHR analysis, cohort studies, survival analysis
+- **Imaging**: Medical image processing, quantification, segmentation
+- **Chemistry**: Molecular dynamics, docking, QSAR modeling
+
+**Goal**: Build an ecosystem where researchers can plug in specialized tools and immediately gain AI-powered analysis capabilities.
 
 ---
 
@@ -1163,83 +1188,9 @@ Special thanks to the open-source community!
   - [Next.js Documentation](https://nextjs.org/docs)
   - [Anthropic API Docs](https://docs.anthropic.com)
 
-- **Community**
-  - [GitHub Discussions](https://github.com/kamilseghrouchni/nula-client/discussions)
-  - [Issue Tracker](https://github.com/kamilseghrouchni/nula-client/issues)
-
 - **Related Projects**
   - [mcp-use](https://github.com/mcp-use/mcp-use) - MCP client framework (powers Nula Labs)
   - [Model Context Protocol](https://modelcontextprotocol.io) - MCP specification
-
----
-
-## Community
-
-<div align="center">
-
-Join our growing community of researchers and developers!
-
-[![GitHub Discussions](https://img.shields.io/badge/Discussions-Join-blue?style=for-the-badge&logo=github)](https://github.com/kamilseghrouchni/nula-client/discussions)
-[![GitHub Issues](https://img.shields.io/badge/Issues-Report-red?style=for-the-badge&logo=github)](https://github.com/kamilseghrouchni/nula-client/issues)
-[![Twitter Follow](https://img.shields.io/twitter/follow/nulalabs?style=for-the-badge&logo=twitter&color=1DA1F2)](https://twitter.com/nulalabs)
-[![Discord](https://img.shields.io/badge/Discord-Join-5865F2?style=for-the-badge&logo=discord)](https://discord.gg/nulalabs)
-
-</div>
-
-### **Get Help**
-- 📖 [Read the Docs](https://docs.nulalabs.io)
-- 💬 [Ask in Discussions](https://github.com/kamilseghrouchni/nula-client/discussions)
-- 🐛 [Report a Bug](https://github.com/kamilseghrouchni/nula-client/issues/new?template=bug_report.md)
-- ✨ [Request a Feature](https://github.com/kamilseghrouchni/nula-client/issues/new?template=feature_request.md)
-
-### **Contribute**
-- 💻 [Submit a PR](https://github.com/kamilseghrouchni/nula-client/pulls)
-- 📝 [Improve Docs](https://github.com/kamilseghrouchni/nula-client/tree/main/docs)
-- 🌐 [Add Translations](https://github.com/kamilseghrouchni/nula-client/tree/main/locales)
-- 🎨 [Share Examples](https://github.com/kamilseghrouchni/nula-client/tree/main/examples)
-
-### **Stay Updated**
-- ⭐ Star this repo to follow development
-- 👀 Watch releases for new features
-- 🔔 Subscribe to our newsletter (coming soon!)
-
----
-
-## Star History
-
-If you find Nula Labs useful, **give us a star** on GitHub!
-
-<div align="center">
-
-[![Star History Chart](https://api.star-history.com/svg?repos=kamilseghrouchni/nula-client&type=Date)](https://star-history.com/#kamilseghrouchni/nula-client&Date)
-
-</div>
-
----
-
-## Project Stats
-
-<div align="center">
-
-![GitHub commit activity](https://img.shields.io/github/commit-activity/m/kamilseghrouchni/nula-client?style=flat-square)
-![GitHub last commit](https://img.shields.io/github/last-commit/kamilseghrouchni/nula-client?style=flat-square)
-![GitHub contributors](https://img.shields.io/github/contributors/kamilseghrouchni/nula-client?style=flat-square)
-![GitHub issues](https://img.shields.io/github/issues/kamilseghrouchni/nula-client?style=flat-square)
-![GitHub pull requests](https://img.shields.io/github/issues-pr/kamilseghrouchni/nula-client?style=flat-square)
-
-</div>
-
----
-
-## Contributors
-
-Thanks to these wonderful people who have contributed to Nula Labs:
-
-<div align="center">
-
-[![Contributors](https://contrib.rocks/image?repo=kamilseghrouchni/nula-client)](https://github.com/kamilseghrouchni/nula-client/graphs/contributors)
-
-</div>
 
 ---
 
@@ -1248,11 +1199,5 @@ Thanks to these wonderful people who have contributed to Nula Labs:
 **Built with ❤️ for the research community**
 
 *Transform your data analysis workflow today with Nula Labs*
-
-<p>
-  <a href="https://github.com/kamilseghrouchni/nula-client">⭐ Star on GitHub</a> •
-  <a href="https://docs.nulalabs.io">📖 Read the Docs</a> •
-  <a href="https://twitter.com/nulalabs">🐦 Follow on Twitter</a>
-</p>
 
 </div>
