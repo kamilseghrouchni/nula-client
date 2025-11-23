@@ -30,6 +30,15 @@ export default function ChatPage() {
 
   const { messages, sendMessage, status, error } = useChat();
 
+  // Debug: Track status changes
+  useEffect(() => {
+    console.log(`[Chat Status] 🔄 Status changed to: "${status}"`, {
+      timestamp: new Date().toISOString(),
+      messageCount: messages.length,
+      lastMessageRole: messages.length > 0 ? messages[messages.length - 1].role : 'none'
+    });
+  }, [status, messages.length]);
+
   // Ref to store the last complete workflow graph (preserves during streaming)
   const lastCompleteWorkflowRef = useRef<{ nodes: any[]; edges: any[] }>({ nodes: [], edges: [] });
 
@@ -137,10 +146,15 @@ export default function ChatPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (status !== 'ready') return;
+    if (status !== 'ready') {
+      console.log(`[Chat Submit] ⚠️ Blocked - status is "${status}", not "ready"`);
+      return;
+    }
 
     // If input has text, send it
     if (input.trim()) {
+      console.log(`[Chat Submit] 📤 Sending message: "${input.substring(0, 50)}..."`);
+      console.log(`[Chat Submit] ⏱️ Start time:`, new Date().toISOString());
       sendMessage({ text: input });
       setInput('');
       setSuggestedFollowup(null); // Clear suggestion after sending
@@ -539,7 +553,13 @@ export default function ChatPage() {
               ))}
 
               {/* Immediate "Thinking" indicator during request processing (submitted = waiting for stream, streaming = active stream) */}
-              {(status === 'submitted' || status === 'streaming') && messages.length > 0 && messages[messages.length - 1].role === 'user' && (
+              {(() => {
+                const showIndicator = (status === 'submitted' || status === 'streaming') && messages.length > 0 && messages[messages.length - 1].role === 'user';
+                if (showIndicator) {
+                  console.log(`[Loading Indicator] ✅ Showing - status: "${status}"`);
+                }
+                return showIndicator;
+              })() && (
                 <div className="message-enter">
                   <div className="flex gap-3 sm:gap-4">
                     <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
