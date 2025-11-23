@@ -427,7 +427,7 @@ export default function ChatPage() {
                     boxShadow: '0 0 20px rgba(6, 214, 219, 0.4), 0 0 40px rgba(231, 76, 151, 0.3)'
                   }}
                 >
-                  {status === 'streaming' ? (
+                  {(status === 'submitted' || status === 'streaming') ? (
                     <Loader2 className="w-6 h-6 animate-spin pulse-glow" />
                   ) : (
                     <Send className="w-6 h-6" />
@@ -538,8 +538,8 @@ export default function ChatPage() {
                 />
               ))}
 
-              {/* Immediate "Thinking" indicator when streaming starts but no assistant message yet */}
-              {status === 'streaming' && messages.length > 0 && messages[messages.length - 1].role === 'user' && (
+              {/* Immediate "Thinking" indicator during request processing (submitted = waiting for stream, streaming = active stream) */}
+              {(status === 'submitted' || status === 'streaming') && messages.length > 0 && messages[messages.length - 1].role === 'user' && (
                 <div className="message-enter">
                   <div className="flex gap-3 sm:gap-4">
                     <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
@@ -548,7 +548,9 @@ export default function ChatPage() {
                     <div className="flex-1 rounded-lg border border-border bg-card/50 backdrop-blur-sm p-4">
                       <div className="flex items-center gap-3 text-muted-foreground">
                         <Loader2 className="w-5 h-5 animate-spin" />
-                        <span className="text-sm font-medium">Thinking...</span>
+                        <span className="text-sm font-medium">
+                          {status === 'submitted' ? 'Connecting to analysis tools...' : 'Thinking...'}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -609,10 +611,10 @@ export default function ChatPage() {
                   size="lg"
                   className="gap-2 interactive-scale transition-smooth"
                 >
-                  {status === 'streaming' ? (
+                  {(status === 'submitted' || status === 'streaming') ? (
                     <>
                       <Loader2 className="w-6 h-6 animate-spin pulse-glow" />
-                      <span>Sending...</span>
+                      <span>{status === 'submitted' ? 'Connecting...' : 'Streaming...'}</span>
                     </>
                   ) : (
                     <>
