@@ -224,17 +224,6 @@ export const MessageItem = memo(function MessageItem({ message, isStreaming = fa
 
   const hasThinkingActivity = thinkingSteps.length > 0;
 
-  // DEBUG: Log the state to understand what's happening
-  console.log('[MessageItem/DEBUG]', {
-    messageId: message.id,
-    isStreaming,
-    hasThinkingActivity,
-    thinkingStepsCount: thinkingSteps.length,
-    finalTextLength: finalText?.length || 0,
-    partsCount: message.parts?.length || 0,
-    partTypes: message.parts?.map((p: any) => p.type) || []
-  });
-
   // Determine phase: thinking vs generating vs complete
   // isThinkingPhase: Still executing tools, no response text yet → show "Thinking..."
   // isGeneratingPhase: Tools done, response text coming in → show "Generating..."

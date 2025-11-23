@@ -1,0 +1,111 @@
+# BioContextAI MCP Server Selection Configuration
+# Copy this file to selection.yaml and customize your server selection
+
+# Selection Strategy
+# Choose one: "all", "specific", "category", "tags"
+strategy: "specific"
+
+# Specific Servers to Install
+# List servers by their identifier
+servers:
+  - biocontext-ai/knowledgebase-mcp      # Comprehensive biomedical knowledge
+  - longevity-genie/gget-mcp              # Bioinformatics toolkit  - longevity-genie/biothings-mcp          # MyGene, MyVariant, MyChem
+  - cyanheads/clinicaltrialsgov-mcp-server # Clinical trials search
+  # - galaxyproject/galaxy-mcp            # Galaxy workflows (requires API key)
+  # - saezlab/omnipath-next-mcp           # Omnipath molecular interactions
+
+# Category-based Selection
+# Install all servers in specific categories
+categories:
+  - genomics          # Genomics and sequence analysis
+  - proteomics        # Protein analysis tools
+  # - clinical        # Clinical trials, medical databases
+  # - literature      # PubMed, bioRxiv, etc.
+  # - visualization   # PyMOL, Napari, etc.
+
+# Tag-based Selection
+# Install servers with specific tags/keywords
+tags:
+  # - protein-protein interaction
+  # - drug discovery
+  # - single-cell
+  # - pathway analysis
+  # - structural biology
+
+# Remote Server Preference
+# If true, prefer remote endpoints when available
+# If false, install locally even if remote is available
+prefer_remote: false
+
+# Include remote-only servers (servers that don't have local installation)
+include_remote_only: true
+
+# Resource Limits
+# Set limits for individual servers
+resource_limits:
+  default:
+    cpu: "1.0"        # CPU cores
+    memory: "1G"      # Memory limit
+
+  # Override for specific servers
+  overrides:
+    biocontext-ai/knowledgebase-mcp:
+      cpu: "2.0"
+      memory: "2G"
+
+    longevity-genie/gget-mcp:
+      cpu: "1.5"
+      memory: "1.5G"
+
+# Maximum number of servers to install
+# Set to 0 or remove for no limit
+max_servers: 0
+
+# Port Range for HTTP servers
+# Servers will be assigned ports in this range
+port_range:
+  start: 8000
+  end: 8099
+
+# Environment Variables
+# Global environment variables for all servers
+env_vars:
+  LOG_LEVEL: "info"
+  MCP_ENVIRONMENT: "PRODUCTION"
+
+# Per-server environment variables
+server_env_vars:
+  galaxyproject/galaxy-mcp:
+    GALAXY_URL: "https://usegalaxy.org"
+    GALAXY_API_KEY: "${GALAXY_API_KEY}"  # Will be read from .env file
+
+# Excluded Servers
+# Explicitly exclude specific servers
+exclude:
+  # - some-org/some-server
+
+# Advanced Options
+advanced:
+  # Check for updates on startup
+  check_updates_on_startup: true
+
+  # Rebuild containers on config change
+  rebuild_on_change: true
+
+  # Enable health checks
+  enable_health_checks: true
+
+  # Health check interval (seconds)
+  health_check_interval: 30
+
+  # Restart policy: "no", "always", "on-failure", "unless-stopped"
+  restart_policy: "unless-stopped"
+
+  # Network mode: "bridge", "host"
+  network_mode: "bridge"
+
+  # Enable prometheus metrics
+  enable_metrics: false
+
+  # Enable centralized logging
+  enable_logging: true

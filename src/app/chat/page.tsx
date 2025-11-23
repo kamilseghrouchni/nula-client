@@ -14,9 +14,11 @@ import { extractFollowupQuestion } from '@/lib/utils/followup';
 import { extractPlans } from '@/lib/utils/extractPlans';
 import { Send, Loader2, Network, Sparkles, FlaskConical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ModelSelector } from '@/components/ui/model-selector';
 import { RightPanel } from '@/components/RightPanel';
 import { HiddenArtifactPool } from '@/components/artifact/HiddenArtifactPool';
 import { buildWorkflowGraph } from '@/lib/workflow/workflowBuilder';
+import { getDefaultModel } from '@/lib/models/registry';
 import dynamic from 'next/dynamic';
 
 // Dynamic import to avoid SSR issues with Three.js
@@ -26,7 +28,29 @@ export default function ChatPage() {
   const [input, setInput] = useState('');
   const [suggestedFollowup, setSuggestedFollowup] = useState<string | null>(null);
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
-  const { messages, sendMessage, status, error } = useChat();
+  const [selectedModel, setSelectedModel] = useState(getDefaultModel().id);
+
+  // Log model changes
+  useEffect(() => {
+    console.log('[Chat/Frontend] 🎯 Model changed to:', selectedModel);
+  }, [selectedModel]);
+
+  const { messages, sendMessage, status, error } = useChat({
+    api: `/api/chat?modelId=${selectedModel}`,
+    onError: (error: Error) => {
+      console.error('[Chat] Error:', error);
+    },
+    onFinish: (message) => {
+      console.log('[Chat/Frontend] ✅ Response finished from model:', selectedModel);
+    },
+  });
+
+  // Log when sending messages
+  useEffect(() => {
+    if (status === 'streaming') {
+      console.log('[Chat/Frontend] 📤 Message being sent with model:', selectedModel);
+    }
+  }, [status, selectedModel]);
 
   // Ref to store the last complete workflow graph (preserves during streaming)
   const lastCompleteWorkflowRef = useRef<{ nodes: any[]; edges: any[] }>({ nodes: [], edges: [] });
@@ -36,7 +60,6 @@ export default function ChatPage() {
 
   // Verify animations CSS is loaded on mount
   useEffect(() => {
-    console.log('[Chat/Animation] 🎨 Verifying animation CSS is loaded...');
     const testElement = document.createElement('div');
     testElement.className = 'animate-fade-in-up glow-border';
     testElement.style.opacity = '0';
@@ -44,17 +67,6 @@ export default function ChatPage() {
 
     // Use setTimeout to ensure styles are computed
     setTimeout(() => {
-      const computedStyle = window.getComputedStyle(testElement);
-      console.log('[Chat/Animation] Animation property:', computedStyle.animation || 'NONE');
-      console.log('[Chat/Animation] Transition property:', computedStyle.transition || 'NONE');
-      console.log('[Chat/Animation] Box-shadow (glow-border):', computedStyle.boxShadow || 'NONE');
-
-      if (computedStyle.animation && computedStyle.animation !== 'none') {
-        console.log('[Chat/Animation] ✅ CSS animations loaded successfully!');
-      } else {
-        console.error('[Chat/Animation] ❌ CSS animations NOT loaded - animation property is', computedStyle.animation);
-      }
-
       document.body.removeChild(testElement);
     }, 100);
   }, []);
@@ -77,7 +89,6 @@ export default function ChatPage() {
         const followup = extractFollowupQuestion(textParts);
 
         if (followup) {
-          console.log('[Followup] Extracted:', followup);
           setSuggestedFollowup(followup);
         } else {
           // Clear if no follow-up found
@@ -150,11 +161,6 @@ export default function ChatPage() {
       }
     });
 
-    console.log('[Artifacts] Extracted count:', allArtifacts.length);
-    if (allArtifacts.length > 0) {
-      console.log('[Artifacts] IDs:', allArtifacts.map(a => a.id));
-    }
-
     return allArtifacts;
   }, [messageSignature, messages]);
 
@@ -176,7 +182,6 @@ export default function ChatPage() {
     }
     // If input is empty but we have a suggestion, send the suggestion
     else if (suggestedFollowup) {
-      console.log('[Followup] Sending suggested question:', suggestedFollowup);
       sendMessage({ text: suggestedFollowup });
       setSuggestedFollowup(null); // Clear suggestion after sending
     }
@@ -248,15 +253,11 @@ export default function ChatPage() {
   // CRITICAL: Only rebuild workflow when NOT streaming to ensure we capture complete responses
   // If we rebuild during streaming, we'll only get partial text from incomplete messages
   const workflowGraph = useMemo(() => {
-    const timestamp = new Date().toISOString().substring(11, 23);
-
     if (status === 'streaming') {
-      console.log(`⏸️ [${timestamp}] [Workflow/Chat] Skipping rebuild during streaming, using cached graph with ${lastCompleteWorkflowRef.current.nodes.length} nodes`);
       // Return previous graph during streaming to preserve visualization
       return lastCompleteWorkflowRef.current;
     }
 
-    console.log(`🔄 [${timestamp}] [Workflow/Chat] Building graph from ${messages.length} complete messages`);
     const baseGraph = buildWorkflowGraph(messages);
 
     // Enrich nodes with LLM-extracted insights
@@ -276,19 +277,6 @@ export default function ChatPage() {
         return node;
       })
     };
-
-    console.log(`✅ [${timestamp}] [Workflow/Chat] Built graph with ${enrichedGraph.nodes.length} nodes`);
-    if (enrichedGraph.nodes.length > 0) {
-      const firstNode = enrichedGraph.nodes[0];
-      console.log(`📊 [${timestamp}] [Workflow/Chat] First node sample:`, {
-        id: firstNode.id,
-        phase: firstNode.phase,
-        hasMetadata: !!firstNode.metadata,
-        metadataInsight: firstNode.metadata?.insight,
-        fullResponseLength: firstNode.fullResponse?.length || 0,
-        fullResponsePreview: firstNode.fullResponse?.substring(0, 100)
-      });
-    }
 
     // Cache the enriched graph
     lastCompleteWorkflowRef.current = enrichedGraph;
@@ -491,12 +479,21 @@ export default function ChatPage() {
             }}>
               Zero-Shot Bioanalysis Agents
             </p>
-            <p className="text-base sm:text-lg text-muted-foreground/80 mb-12 animate-fade-in-up stagger-2 max-w-3xl mx-auto">
+            <p className="text-base sm:text-lg text-muted-foreground/80 mb-8 animate-fade-in-up stagger-2 max-w-3xl mx-auto">
               Empowering generalist AI models to perform specialist bioanalysis through curated MCP tools
             </p>
 
+            {/* Model Selector - Prominent on Welcome Screen */}
+            <div className="flex justify-center items-center gap-3 mb-8 animate-fade-in-up stagger-2">
+              <span className="text-sm font-medium text-muted-foreground">Select Model:</span>
+              <ModelSelector
+                selectedModelId={selectedModel}
+                onModelChange={setSelectedModel}
+              />
+            </div>
+
             {/* Centered Input */}
-            <form onSubmit={handleSubmit} className="max-w-4xl mx-auto animate-fade-in-up stagger-2">
+            <form onSubmit={handleSubmit} className="max-w-4xl mx-auto animate-fade-in-up stagger-3">
               <div className="flex gap-3 sm:gap-4">
                 <div className="relative flex-1">
                   {/* Gradient border wrapper */}
@@ -542,7 +539,7 @@ export default function ChatPage() {
             </form>
 
             {/* Suggestion Chips */}
-            <div className="max-w-4xl mx-auto mt-6 sm:mt-8 animate-fade-in-up stagger-3">
+            <div className="max-w-4xl mx-auto mt-6 sm:mt-8 animate-fade-in-up stagger-4">
               <Suggestions>
                 {suggestions.map((suggestion) => (
                   <Suggestion
@@ -570,21 +567,43 @@ export default function ChatPage() {
           {/* Header */}
           <div className="bg-card/80 backdrop-blur-sm border-b border-border px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-5 flex-shrink-0 relative z-10">
             <div className={`flex items-center justify-between ${showRightPanel ? '' : 'max-w-7xl mx-auto'}`}>
-              <div>
-                <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
-                  <span className="inline-block w-2 h-2 sm:w-2.5 sm:h-2.5 bg-primary rounded-full" />
-                  Nula Labs
-                </h1>
-                <p className="text-xs sm:text-sm font-medium mt-1" style={{
-                  background: 'linear-gradient(135deg, #06D6DB 0%, #E74C97 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                }}>
-                  Zero-Shot Bioanalysis Agents
-                </p>
+              <div className="flex items-center gap-4">
+                <div>
+                  <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
+                    <span className="inline-block w-2 h-2 sm:w-2.5 sm:h-2.5 bg-primary rounded-full" />
+                    Nula Labs
+                  </h1>
+                  <p className="text-xs sm:text-sm font-medium mt-1" style={{
+                    background: 'linear-gradient(135deg, #06D6DB 0%, #E74C97 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                  }}>
+                    Zero-Shot Bioanalysis Agents
+                  </p>
+                </div>
+
+                {/* Model Selector - Prominent Position */}
+                <div className="hidden md:flex items-center gap-2 pl-4 border-l border-border">
+                  <span className="text-xs text-muted-foreground font-medium">Model:</span>
+                  <ModelSelector
+                    selectedModelId={selectedModel}
+                    onModelChange={setSelectedModel}
+                    className="animate-scale-in"
+                  />
+                </div>
               </div>
+
               <div className="flex gap-2">
+                {/* Mobile Model Selector */}
+                <div className="md:hidden">
+                  <ModelSelector
+                    selectedModelId={selectedModel}
+                    onModelChange={setSelectedModel}
+                    className="animate-scale-in"
+                  />
+                </div>
+
                 {hasPlans && (
                   <Button
                     variant={rightPanelOpen ? "default" : "outline"}

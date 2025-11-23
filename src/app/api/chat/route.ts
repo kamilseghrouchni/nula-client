@@ -16,6 +16,8 @@ import { buildDataContext, formatContextForPrompt } from '@/lib/context/dataCont
 import { shouldSummarize, calculateContextSize } from '@/lib/utils/tokenCounter';
 import { summarizeOlderMessages, createSummaryMessage } from '@/lib/summarization/summarizer';
 import { extractPlanFromText, createPlanFromStep, savePlan } from '@/lib/cache/planCache';
+import { createModelProvider } from '@/lib/models/provider-factory';
+import { getModelById, getDefaultModel } from '@/lib/models/registry';
 
 export const maxDuration = 60;
 
@@ -24,56 +26,83 @@ export async function POST(request: Request) {
     const json = await request.json();
     const { messages } = json as { messages: UIMessage[] };
 
+    // Extract model selection from URL query parameters (fallback to default)
+    const url = new URL(request.url);
+    const modelId = url.searchParams.get('modelId');
+    const selectedModelId = modelId || getDefaultModel().id;
+
+    console.log('\n' + '='.repeat(80));
+    console.log('[Model Selection] 📥 Request received');
+    console.log('[Model Selection] 🔗 URL:', request.url);
+    console.log('[Model Selection] 📦 Query param modelId:', modelId);
+    console.log('[Model Selection] 🎯 Selected model ID:', selectedModelId);
+    console.log('='.repeat(80));
+
+    // Validate and get model configuration
+    const modelConfig = getModelById(selectedModelId);
+    console.log('[Model Selection] 🔍 Model config lookup:', {
+      requestedId: selectedModelId,
+      found: !!modelConfig,
+      config: modelConfig ? {
+        id: modelConfig.id,
+        name: modelConfig.name,
+        provider: modelConfig.provider,
+        status: modelConfig.status,
+        endpoint: modelConfig.endpoint
+      } : null
+    });
+
+    if (!modelConfig) {
+      console.error('[Model Selection] ❌ Model not found:', selectedModelId, '- falling back to default');
+      const defaultModel = getDefaultModel();
+      var model = createModelProvider(defaultModel.id);
+      var activeModelId = defaultModel.id;
+    } else if (modelConfig.status === 'unavailable') {
+      console.warn('[Model Selection] ⚠️ Model unavailable:', selectedModelId, '- falling back to default');
+      const defaultModel = getDefaultModel();
+      var model = createModelProvider(defaultModel.id);
+      var activeModelId = defaultModel.id;
+    } else {
+      // Create model provider
+      try {
+        console.log('[Model Selection] 🔨 Creating provider for:', selectedModelId, 'with config:', {
+          provider: modelConfig.provider,
+          endpoint: modelConfig.endpoint || 'default'
+        });
+        var model = createModelProvider(selectedModelId);
+        var activeModelId = selectedModelId;
+        console.log('[Model Selection] ✅ Successfully created provider for:', selectedModelId);
+      } catch (error) {
+        console.error('[Model Selection] ❌ Error creating provider:', error, '- falling back to default');
+        const defaultModel = getDefaultModel();
+        model = createModelProvider(defaultModel.id);
+        activeModelId = defaultModel.id;
+      }
+    }
+
+    console.log('[Model Selection] 🎯 FINAL ACTIVE MODEL:', activeModelId);
+    console.log('='.repeat(80) + '\n');
+
     // Get MCP client and convert tools to AI SDK format
     const mcpClient = await getMCPClient();
     const sessions = mcpClient.getAllActiveSessions();
     const tools = await convertMCPToolsToAISDK(sessions);
-    console.log('[Chat/DEBUG] 📦 Loaded tools from all servers:', Object.keys(tools).length);
-
-    // Debug: Log Sleepyrat tool schemas
-    const sleepyratTools = Object.entries(tools).filter(([name]) => name.startsWith('sleepyrat__'));
-    console.log('[Chat/DEBUG] Sleepyrat tools count:', sleepyratTools.length);
-    if (sleepyratTools.length > 0) {
-      const firstTool = sleepyratTools[0];
-      console.log('[Chat/DEBUG] Sample Sleepyrat tool:', firstTool[0]);
-      console.log('[Chat/DEBUG] Sample schema:', JSON.stringify(firstTool[1].inputSchema));
-    }
 
     // Add synthetic tools for MCP resources and prompts
     const syntheticTools = await createSyntheticTools(sessions);
     Object.assign(tools, syntheticTools);
-    console.log('[Chat] 🔧 Added', Object.keys(syntheticTools).length, 'synthetic tools for MCP resources/prompts');
 
     // List available prompts for context
     const promptsList = await listAllPrompts(sessions);
     const promptsContext = promptsList.totalCount > 0
       ? formatPromptsForDisplay(promptsList.prompts)
       : '';
-    console.log('[Chat] 📝 Found', promptsList.totalCount, 'prompts from MCP servers');
 
     let stepCount = 0;
 
     // Build data context from message history
     const dataContext = buildDataContext(messages);
     const contextPrompt = formatContextForPrompt(dataContext);
-
-    console.log('[Context] Tool calls in history:', dataContext.toolCalls.length);
-    console.log('[Context] Loaded datasets:', dataContext.loadedDatasets);
-
-    // Debug: Check if context is being built correctly
-    if (messages.length > 1) {
-      console.log('[Context] Sample message parts:', messages.slice(-2).map(m => ({
-        role: m.role,
-        partTypes: m.parts?.map((p: any) => p.type) || []
-      })));
-    }
-
-    // Log context prompt if it exists
-    if (contextPrompt) {
-      console.log('[Context] Injecting context into prompt (length:', contextPrompt.length, 'chars)');
-    } else {
-      console.log('[Context] No context to inject (first message or no tools called yet)');
-    }
 
     // Create UI message stream with tool call support
     const stream = createUIMessageStream({
@@ -104,28 +133,15 @@ ${contextPrompt ? '\n\nREMINDER: Check the "Session Data Context" section above 
         let processedMessages = messages;
 
         if (needsSummarization) {
-          console.log('[Summarization] Token threshold exceeded, summarizing older messages...');
-
           const { summaryText, recentMessages, summarizedCount } = await summarizeOlderMessages(messages);
-
-          console.log('[Summarization] Complete:', {
-            summarizedCount,
-            recentCount: recentMessages.length,
-            summaryLength: summaryText.length,
-          });
 
           // Create synthetic summary message and prepend to recent messages
           const summaryMessage = createSummaryMessage(summaryText);
           processedMessages = [summaryMessage, ...recentMessages];
-
-          console.log(`[Summarization] Final message count: ${processedMessages.length} (was ${messages.length})`);
-        } else {
-          console.log('[Summarization] Not needed, context within limits');
         }
 
         // Calculate final context size
         const finalContextSize = calculateContextSize(systemPrompt, processedMessages, tools);
-        console.log('[Token Management] Final context:', finalContextSize);
 
         // Convert processed messages to model format
         const modelMessages = convertToModelMessages(processedMessages);
@@ -151,80 +167,20 @@ ${contextPrompt ? '\n\nREMINDER: Check the "Session Data Context" section above 
           };
         }
 
-        // CRITICAL DEBUG: Write ALL tool schemas to file for inspection
-        const fs = await import('fs/promises');
-        const toolSchemas = Object.entries(tools).map(([name, tool]) => ({
-          name,
-          schema: tool.inputSchema
-        }));
-        await fs.writeFile(
-          '/tmp/tool_schemas_debug.json',
-          JSON.stringify(toolSchemas, null, 2)
-        );
-        console.log('[Chat/CRITICAL] 📝 Written', toolSchemas.length, 'tool schemas to /tmp/tool_schemas_debug.json');
-
-        // DEBUG: Log the messages being sent to Anthropic
-        console.log('[Chat/DEBUG] 📤 Messages being sent to Anthropic:');
-        await fs.writeFile(
-          '/tmp/messages_debug.json',
-          JSON.stringify(messagesWithCaching, null, 2)
-        );
-        console.log('[Chat/DEBUG] 📝 Written messages to /tmp/messages_debug.json');
 
         const result = streamText({
-          model: anthropic('claude-haiku-4-5'),
+          model, // Use dynamically selected model
           messages: messagesWithCaching,
           tools,
           stopWhen: stepCountIs(25),
 
-          // Log cache performance
           onFinish: async ({ usage }) => {
-            if (usage) {
-              console.log('[Cache Performance]', {
-                inputTokens: usage.inputTokens,
-                outputTokens: usage.outputTokens,
-              });
-
-              // Log full usage object to see cache metrics (includes Anthropic-specific cache data)
-              console.log('[Full Usage]', JSON.stringify(usage, null, 2));
-            }
+            // Intentionally empty - usage tracking can be added here if needed
           },
 
           // Track steps and extract plans
           onStepFinish: async (step) => {
             stepCount++;
-            console.log(`[Step ${stepCount}] ${step.finishReason}`, {
-              toolCalls: step.toolCalls?.length || 0,
-              toolResults: step.toolResults?.length || 0,
-              hasText: !!step.text
-            });
-
-            // Extract and log workflow metadata from reasoning
-            if (step.text) {
-              const workflowMatch = step.text.match(/\[WORKFLOW:\s*type="(parallel|sequential)"(?:\s+phase="([^"]+)")?\]/i);
-              if (workflowMatch) {
-                console.log('[Workflow Metadata]', {
-                  type: workflowMatch[1],
-                  phase: workflowMatch[2] || 'unspecified',
-                  stepNumber: stepCount,
-                });
-              }
-            }
-
-            // Log tool errors for debugging
-            if (step.toolResults) {
-              for (const result of step.toolResults) {
-                if ((result as any).error || (result as any).isError) {
-                  const failedToolCall = step.toolCalls?.find((tc: any) => tc.toolCallId === (result as any).toolCallId) as any;
-                  console.error('[Tool Error]', {
-                    toolCallId: (result as any).toolCallId,
-                    toolName: failedToolCall?.toolName || 'unknown',
-                    error: (result as any).error || 'Unknown error',
-                    args: failedToolCall?.args || {}
-                  });
-                }
-              }
-            }
 
             // Extract and cache plans from reasoning text
             if (step.text) {
@@ -247,7 +203,6 @@ ${contextPrompt ? '\n\nREMINDER: Check the "Session Data Context" section above 
                 );
 
                 savePlan(plan);
-                console.log('[Plan Cache] Extracted and saved plan from step');
               }
             }
           },

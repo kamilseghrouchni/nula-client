@@ -1,0 +1,399 @@
+version: '3.9'
+networks:
+  mcp_network:
+    driver: bridge
+volumes:
+  biocontext-ai-knowledgebase-mcp-data:
+    driver: local
+  longevity-genie-biothings-mcp-data:
+    driver: local
+  longevity-genie-gget-mcp-data:
+    driver: local
+  longevity-genie-opengenes-mcp-data:
+    driver: local
+  longevity-genie-synergy-age-mcp-data:
+    driver: local
+  meringlab-string-mcp-data:
+    driver: local
+  saezlab-omnipath-next-data:
+    driver: local
+  biocontext-ai-anndata-mcp-data:
+    driver: local
+  biocontext-ai-unofficial-cellosaurus-mcp-data:
+    driver: local
+  pdbeurope-pdbe-mcp-servers-data:
+    driver: local
+  galaxyproject-galaxy-mcp-data:
+    driver: local
+  cyanheads-clinicaltrialsgov-mcp-server-data:
+    driver: local
+  longevity-genie-pharmacology-mcp-data:
+    driver: local
+services:
+  biocontext-ai-knowledgebase-mcp:
+    container_name: biocontext-ai-knowledgebase-mcp
+    networks:
+    - mcp_network
+    restart: unless-stopped
+    image: alpine:latest
+    command:
+    - tail
+    - -f
+    - /dev/null
+    environment:
+    - REMOTE_URL=https://mcp.biocontext.ai/mcp/
+    - TRANSPORT=http
+    - LOG_LEVEL=info
+    - MCP_ENVIRONMENT=PRODUCTION
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+    volumes:
+    - biocontext-ai-knowledgebase-mcp-data:/app/data
+  longevity-genie-biothings-mcp:
+    container_name: longevity-genie-biothings-mcp
+    networks:
+    - mcp_network
+    restart: unless-stopped
+    image: alpine:latest
+    command:
+    - tail
+    - -f
+    - /dev/null
+    environment:
+    - REMOTE_URL=https://biothings-mcp.longevity-genie.info/mcp
+    - TRANSPORT=http
+    - LOG_LEVEL=info
+    - MCP_ENVIRONMENT=PRODUCTION
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+    volumes:
+    - longevity-genie-biothings-mcp-data:/app/data
+  longevity-genie-gget-mcp:
+    container_name: longevity-genie-gget-mcp
+    networks:
+    - mcp_network
+    restart: unless-stopped
+    image: alpine:latest
+    command:
+    - tail
+    - -f
+    - /dev/null
+    environment:
+    - REMOTE_URL=https://gget-mcp.longevity-genie.info/mcp
+    - TRANSPORT=http
+    - LOG_LEVEL=info
+    - MCP_ENVIRONMENT=PRODUCTION
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+    volumes:
+    - longevity-genie-gget-mcp-data:/app/data
+  longevity-genie-opengenes-mcp:
+    container_name: longevity-genie-opengenes-mcp
+    networks:
+    - mcp_network
+    restart: unless-stopped
+    image: alpine:latest
+    command:
+    - tail
+    - -f
+    - /dev/null
+    environment:
+    - REMOTE_URL=https://opengenes-mcp.longevity-genie.info/mcp
+    - TRANSPORT=http
+    - LOG_LEVEL=info
+    - MCP_ENVIRONMENT=PRODUCTION
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+    volumes:
+    - longevity-genie-opengenes-mcp-data:/app/data
+  longevity-genie-synergy-age-mcp:
+    container_name: longevity-genie-synergy-age-mcp
+    networks:
+    - mcp_network
+    restart: unless-stopped
+    image: alpine:latest
+    command:
+    - tail
+    - -f
+    - /dev/null
+    environment:
+    - REMOTE_URL=https://synergy-age-mcp.longevity-genie.info/mcp
+    - TRANSPORT=http
+    - LOG_LEVEL=info
+    - MCP_ENVIRONMENT=PRODUCTION
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+    volumes:
+    - longevity-genie-synergy-age-mcp-data:/app/data
+  meringlab-string-mcp:
+    container_name: meringlab-string-mcp
+    networks:
+    - mcp_network
+    restart: unless-stopped
+    image: alpine:latest
+    command:
+    - tail
+    - -f
+    - /dev/null
+    environment:
+    - REMOTE_URL=https://mcp.string-db.org/
+    - TRANSPORT=http
+    - LOG_LEVEL=info
+    - MCP_ENVIRONMENT=PRODUCTION
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+    volumes:
+    - meringlab-string-mcp-data:/app/data
+  saezlab-omnipath-next:
+    container_name: saezlab-omnipath-next
+    networks:
+    - mcp_network
+    restart: unless-stopped
+    image: alpine:latest
+    command:
+    - tail
+    - -f
+    - /dev/null
+    environment:
+    - REMOTE_URL=https://explore.omnipathdb.org/api/mcp
+    - TRANSPORT=http
+    - LOG_LEVEL=info
+    - MCP_ENVIRONMENT=PRODUCTION
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+    volumes:
+    - saezlab-omnipath-next-data:/app/data
+  biocontext-ai-anndata-mcp:
+    container_name: biocontext-ai-anndata-mcp
+    networks:
+    - mcp_network
+    restart: unless-stopped
+    build:
+      context: ./servers/biocontext-ai-anndata-mcp
+      dockerfile: Dockerfile
+    environment:
+    - UV_PYTHON=3.12
+    - PORT=8007
+    - MCP_ENVIRONMENT=PRODUCTION
+    - LOG_LEVEL=info
+    - MCP_ENVIRONMENT=PRODUCTION
+    ports:
+    - 127.0.0.1:8007:8007
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+    volumes:
+    - biocontext-ai-anndata-mcp-data:/app/data
+    healthcheck:
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:8007/health
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+  biocontext-ai-unofficial-cellosaurus-mcp:
+    container_name: biocontext-ai-unofficial-cellosaurus-mcp
+    networks:
+    - mcp_network
+    restart: unless-stopped
+    image: alpine:latest
+    command:
+    - tail
+    - -f
+    - /dev/null
+    environment:
+    - REMOTE_URL=https://unofficial-cellosaurus-mcp.fastmcp.app/mcp
+    - TRANSPORT=http
+    - LOG_LEVEL=info
+    - MCP_ENVIRONMENT=PRODUCTION
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+    volumes:
+    - biocontext-ai-unofficial-cellosaurus-mcp-data:/app/data
+  pdbeurope-pdbe-mcp-servers:
+    container_name: pdbeurope-pdbe-mcp-servers
+    networks:
+    - mcp_network
+    restart: unless-stopped
+    build:
+      context: ./servers/pdbeurope-pdbe-mcp-servers
+      dockerfile: Dockerfile
+    environment:
+    - UV_PYTHON=3.12
+    - PORT=8009
+    - MCP_ENVIRONMENT=PRODUCTION
+    - LOG_LEVEL=info
+    - MCP_ENVIRONMENT=PRODUCTION
+    ports:
+    - 127.0.0.1:8009:8009
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+    volumes:
+    - pdbeurope-pdbe-mcp-servers-data:/app/data
+    healthcheck:
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:8009/health
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+  galaxyproject-galaxy-mcp:
+    container_name: galaxyproject-galaxy-mcp
+    networks:
+    - mcp_network
+    restart: unless-stopped
+    build:
+      context: ./servers/galaxyproject-galaxy-mcp
+      dockerfile: Dockerfile
+    environment:
+    - UV_PYTHON=3.12
+    - PORT=8010
+    - MCP_ENVIRONMENT=PRODUCTION
+    - LOG_LEVEL=info
+    - MCP_ENVIRONMENT=PRODUCTION
+    ports:
+    - 127.0.0.1:8010:8010
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+    volumes:
+    - galaxyproject-galaxy-mcp-data:/app/data
+    healthcheck:
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:8010/health
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+  cyanheads-clinicaltrialsgov-mcp-server:
+    container_name: cyanheads-clinicaltrialsgov-mcp-server
+    networks:
+    - mcp_network
+    restart: unless-stopped
+    build:
+      context: ./servers/cyanheads-clinicaltrialsgov-mcp-server
+      dockerfile: Dockerfile
+    environment:
+    - PORT=8011
+    - MCP_TRANSPORT_TYPE=http
+    - LOG_LEVEL=info
+    - MCP_ENVIRONMENT=PRODUCTION
+    ports:
+    - 127.0.0.1:8011:8011
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+    volumes:
+    - cyanheads-clinicaltrialsgov-mcp-server-data:/app/data
+    healthcheck:
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:8011/health
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+  longevity-genie-pharmacology-mcp:
+    container_name: longevity-genie-pharmacology-mcp
+    networks:
+    - mcp_network
+    restart: unless-stopped
+    build:
+      context: ./servers/longevity-genie-pharmacology-mcp
+      dockerfile: Dockerfile
+    environment:
+    - UV_PYTHON=3.12
+    - PORT=8012
+    - MCP_ENVIRONMENT=PRODUCTION
+    - LOG_LEVEL=info
+    - MCP_ENVIRONMENT=PRODUCTION
+    ports:
+    - 127.0.0.1:8012:8012
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+    volumes:
+    - longevity-genie-pharmacology-mcp-data:/app/data
+    healthcheck:
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:8012/health
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+  mcp-gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    container_name: mcp-gateway
+    ports:
+    - 127.0.0.1:9000:9000
+    networks:
+    - mcp_network
+    environment:
+    - GATEWAY_PORT=9000
+    - LOG_LEVEL=info
+    depends_on:
+    - biocontext-ai-knowledgebase-mcp
+    - longevity-genie-biothings-mcp
+    - longevity-genie-gget-mcp
+    - longevity-genie-opengenes-mcp
+    - longevity-genie-synergy-age-mcp
+    - meringlab-string-mcp
+    - saezlab-omnipath-next
+    - biocontext-ai-anndata-mcp
+    - biocontext-ai-unofficial-cellosaurus-mcp
+    - pdbeurope-pdbe-mcp-servers
+    - galaxyproject-galaxy-mcp
+    - cyanheads-clinicaltrialsgov-mcp-server
+    - longevity-genie-pharmacology-mcp
+    restart: unless-stopped

@@ -16,20 +16,11 @@ import { nanoid } from "nanoid";
 function extractToolCalls(message: UIMessage): WorkflowToolCall[] {
   if (!message.parts) return [];
 
-  const timestamp = new Date().toISOString().substring(11, 23);
-  console.log(`🔧 [${timestamp}] [Workflow/ToolExtract] Message parts:`, message.parts.map(p => p.type));
-
   const toolCalls: WorkflowToolCall[] = [];
 
   for (const part of message.parts) {
     // Check for both "tool-" prefix (standard) and "dynamic-tool" (MCP tools)
     if (part.type.startsWith("tool-") || part.type === "dynamic-tool") {
-      console.log(`🔍 [${timestamp}] [Workflow/ToolExtract] Found tool part:`, {
-        type: part.type,
-        hasToolName: "toolName" in part,
-        toolName: "toolName" in part ? (part as any).toolName : undefined,
-        keys: Object.keys(part)
-      });
 
       // Check if it's a tool-call part with toolName
       if ("toolName" in part && typeof part.toolName === "string") {
@@ -60,10 +51,7 @@ function extractToolCalls(message: UIMessage): WorkflowToolCall[] {
  * Collects ALL text from all parts (including multiple steps)
  */
 function extractReasoningText(message: UIMessage): string {
-  const timestamp = new Date().toISOString().substring(11, 23);
-
   if (!message.parts) {
-    console.log(`❌ [${timestamp}] [Workflow/Extract] No parts in message`);
     return "";
   }
 
@@ -77,14 +65,11 @@ function extractReasoningText(message: UIMessage): string {
   }
 
   if (allText.length === 0) {
-    console.log(`❌ [${timestamp}] [Workflow/Extract] No text parts found in ${message.parts.length} parts`);
     return "";
   }
 
   // Join all text parts with newlines
   const fullText = allText.join("\n\n");
-
-  console.log(`📄 [${timestamp}] [Workflow/Extract] Collected ${fullText.length} chars from ${allText.length} text parts`);
 
   // Return ALL text - we want the complete response including analysis
   // Don't truncate at ---ANSWER--- delimiter, we need the full context for insights
@@ -122,13 +107,8 @@ function hasArtifacts(message: UIMessage): boolean {
  * Build workflow graph from conversation messages
  */
 export function buildWorkflowGraph(messages: UIMessage[]): WorkflowGraph {
-  const timestamp = new Date().toISOString().substring(11, 23);
   const nodes: WorkflowNode[] = [];
   const edges: WorkflowEdge[] = [];
-
-  console.log(`🏗️ [${timestamp}] [Workflow/Build] START - Processing ${messages.length} messages:`,
-    messages.map(m => `${m.role}(${m.id.substring(0, 8)})`).join(' -> ')
-  );
 
   let currentPhase = "Initial";
   let lastNodeId: string | null = null;
@@ -140,17 +120,12 @@ export function buildWorkflowGraph(messages: UIMessage[]): WorkflowGraph {
       // Store user query to attach to next assistant response
       // Don't create a separate node for user messages
       lastUserQuery = getMessageText(message);
-      console.log(`👤 [${timestamp}] [Workflow/Build] Stored user query: "${lastUserQuery.substring(0, 50)}..."`);
     } else if (message.role === "assistant") {
-      const timestamp = new Date().toISOString().substring(11, 23);
-
       // Extract reasoning and metadata
       const reasoningText = extractReasoningText(message);
 
       const metadata = extractWorkflowMetadata(reasoningText);
       const toolCalls = extractToolCalls(message);
-
-      console.log(`🔍 [${timestamp}] [Workflow/Build] Found ${toolCalls.length} tool calls in assistant message`);
 
       // Determine phase from metadata or tools or text content
       if (metadata?.phase) {
@@ -198,16 +173,6 @@ export function buildWorkflowGraph(messages: UIMessage[]): WorkflowGraph {
         status,
         metadata: finalMetadata || undefined,
       };
-
-      console.log(`✅ [${timestamp}] [Workflow/Build] Created response node:`, {
-        nodeId,
-        phase: currentPhase,
-        hasUserQuery: !!lastUserQuery,
-        hasMetadata: !!node.metadata,
-        metadataInsight: node.metadata?.insight,
-        fullResponseLength: node.fullResponse?.length || 0,
-        fullResponsePreview: node.fullResponse?.substring(0, 100)
-      });
 
       nodes.push(node);
       lastUserQuery = null; // Clear after attaching to response
