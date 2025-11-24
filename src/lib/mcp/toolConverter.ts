@@ -57,6 +57,9 @@ export async function convertMCPToolsToAISDK(
         // Create namespaced tool name to avoid conflicts between servers
         const toolName = `${serverName}__${mcpTool.name}`;
 
+        // DEBUG: Log the original schema received from MCP server
+        console.log(`[ToolConverter] 🔍 Tool ${toolName} original schema:`, JSON.stringify(mcpTool.inputSchema, null, 2));
+
         // For Sleepyrat tools: Remove 'token' parameter from schema since auth is via headers
         // Per MCP spec, authentication MUST be via Authorization header, not tool parameters
         let schema = mcpTool.inputSchema;
@@ -141,17 +144,35 @@ export async function convertMCPToolsToAISDK(
            */
           execute: async (args) => {
             try {
+              // DEBUG: Log the arguments Claude is passing
+              console.log(`[ToolConverter] 🔍 Executing ${toolName} with args from Claude:`, JSON.stringify(args, null, 2));
+
+              // TRANSFORM: Convert camelCase to snake_case for Python MCP servers
+              // Python uses snake_case (gene_symbol) but JSON schemas often expose camelCase (geneSymbol)
+              const transformedArgs = Object.fromEntries(
+                Object.entries(args).map(([key, value]) => {
+                  const snakeCase = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+                  if (snakeCase !== key) {
+                    console.log(`[ToolConverter] 🔄 Parameter transformation: ${key} → ${snakeCase}`);
+                  }
+                  return [snakeCase, value];
+                })
+              );
+
+              console.log(`[ToolConverter] 🔍 Transformed args for MCP server:`, JSON.stringify(transformedArgs, null, 2));
+
               // For Sleepyrat: Extract token from Authorization header and inject as parameter
               // The API still expects the token parameter even though we send the header
+              let finalArgs = transformedArgs;
               if (serverName === 'sleepyrat') {
                 const connector = session.connector as any;
                 if (connector.headers?.Authorization) {
                   const token = connector.headers.Authorization.replace('Bearer ', '');
-                  args = { ...args, token };
+                  finalArgs = { ...transformedArgs, token };
                 }
               }
 
-              const result = await session.connector.callTool(mcpTool.name, args);
+              const result = await session.connector.callTool(mcpTool.name, finalArgs);
 
               // MCP returns { content: Array<TextContent | ImageContent | ...> }
               // Convert to string format for AI SDK
