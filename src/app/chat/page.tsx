@@ -554,10 +554,23 @@ export default function ChatPage() {
 
               {/* Immediate "Thinking" indicator during request processing (submitted = waiting for stream, streaming = active stream) */}
               {(() => {
-                const showIndicator = (status === 'submitted' || status === 'streaming') && messages.length > 0 && messages[messages.length - 1].role === 'user';
-                if (showIndicator) {
-                  console.log(`[Loading Indicator] ✅ Showing - status: "${status}"`);
-                }
+                // FIX: Show indicator during streaming OR when there's no assistant message yet
+                const isActivelyStreaming = status === 'submitted' || status === 'streaming';
+                const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
+                const hasAssistantResponse = messages.some(m => m.role === 'assistant' && (m.parts?.length > 0 || (m as any).content));
+
+                // Show if: streaming AND (no assistant message yet OR last message is from user)
+                const showIndicator = isActivelyStreaming && (!hasAssistantResponse || lastMessage?.role === 'user');
+
+                console.log(`[Loading Indicator] 🔍 Check:`, {
+                  status,
+                  isActivelyStreaming,
+                  hasAssistantResponse,
+                  lastMessageRole: lastMessage?.role,
+                  showIndicator: showIndicator ? '✅ SHOWING' : '❌ HIDDEN',
+                  messageCount: messages.length
+                });
+
                 return showIndicator;
               })() && (
                 <div className="message-enter">

@@ -84,13 +84,29 @@ export async function POST(request: Request) {
     console.log('='.repeat(80) + '\n');
 
     // Get MCP client and convert tools to AI SDK format
+    console.log('[MCP Initialization] 🔌 Starting MCP client connection...');
+    const mcpStartTime = Date.now();
     const mcpClient = await getMCPClient();
+    const mcpConnectTime = Date.now() - mcpStartTime;
+    console.log(`[MCP Initialization] ✅ MCP client connected in ${mcpConnectTime}ms`);
+
+    console.log('[MCP Initialization] 🔧 Fetching active sessions...');
     const sessions = mcpClient.getAllActiveSessions();
+    const serverNames = Object.keys(sessions);
+    console.log(`[MCP Initialization] 📊 Found ${serverNames.length} active session(s):`, serverNames.join(', '));
+
+    console.log('[MCP Initialization] 🛠️ Converting MCP tools to AI SDK format...');
+    const toolsStartTime = Date.now();
     const tools = await convertMCPToolsToAISDK(sessions);
+    const toolsConvertTime = Date.now() - toolsStartTime;
+    console.log(`[MCP Initialization] ✅ Converted ${Object.keys(tools).length} tools in ${toolsConvertTime}ms`);
 
     // Add synthetic tools for MCP resources and prompts
+    console.log('[MCP Initialization] 🎨 Creating synthetic tools...');
     const syntheticTools = await createSyntheticTools(sessions);
     Object.assign(tools, syntheticTools);
+    console.log(`[MCP Initialization] ✅ Added ${Object.keys(syntheticTools).length} synthetic tools`);
+    console.log(`[MCP Initialization] 🎉 TOTAL: ${Object.keys(tools).length} tools available`);
 
     // List available prompts for context
     const promptsList = await listAllPrompts(sessions);
@@ -168,6 +184,15 @@ ${contextPrompt ? '\n\nREMINDER: Check the "Session Data Context" section above 
         }
 
 
+        console.log('[Streaming] 🚀 Starting AI stream with model:', activeModelId);
+        console.log('[Streaming] 📝 Context:', {
+          messagesCount: messagesWithCaching.length,
+          toolsCount: Object.keys(tools).length,
+          hasCaching: true
+        });
+
+        const streamStartTime = Date.now();
+
         const result = streamText({
           model, // Use dynamically selected model
           messages: messagesWithCaching,
@@ -175,12 +200,22 @@ ${contextPrompt ? '\n\nREMINDER: Check the "Session Data Context" section above 
           stopWhen: stepCountIs(25),
 
           onFinish: async ({ usage }) => {
-            // Intentionally empty - usage tracking can be added here if needed
+            const streamDuration = Date.now() - streamStartTime;
+            console.log(`[Streaming] ✅ Stream completed in ${streamDuration}ms`, {
+              usage: usage || 'not available'
+            });
           },
 
           // Track steps and extract plans
           onStepFinish: async (step) => {
             stepCount++;
+            console.log(`[Streaming] 📊 Step ${stepCount} finished:`, {
+              hasText: !!step.text,
+              textLength: step.text?.length || 0,
+              hasToolCalls: !!step.toolCalls,
+              toolCallsCount: step.toolCalls?.length || 0,
+              toolNames: step.toolCalls?.map(tc => tc.toolName) || []
+            });
 
             // Extract and cache plans from reasoning text
             if (step.text) {
