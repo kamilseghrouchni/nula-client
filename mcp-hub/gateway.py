@@ -258,113 +258,48 @@ class MCPGateway:
         console.print(f"  [green]Connected: {connected}/{len(servers_config)} servers[/green]")
         console.print(f"  [cyan]Total tools: {total_tools}[/cyan]")
 
-    def register_aggregated_tools(self):
-        """Register all collected tools on the gateway MCP server."""
-        console.print("\n[bold blue]Registering tools on gateway...[/bold blue]\n")
+    async def mount_proxy_servers(self):
+        """
+        Mount all connected backend servers as proxies to preserve their schemas.
 
-        registered_count = 0
+        Uses FastMCP.from_client() to create proxy servers that automatically
+        preserve the full tool schemas from backend servers.
+        """
+        console.print("\n[bold blue]Mounting backend servers as proxies...[/bold blue]\n")
+
+        mounted_count = 0
         skipped_count = 0
-        skipped_tools = []
 
         for server_name, server_info in self.servers.items():
             if not server_info.is_connected:
+                console.print(f"  [yellow]⚠ Skipping {server_name} (not connected)[/yellow]")
+                skipped_count += 1
                 continue
 
-            for tool in server_info.tools:
-                tool_name = tool["name"]
-                description = tool.get("description", "")
-                input_schema = tool.get("inputSchema", {})
+            try:
+                # Create a client config for this backend server
+                client_config = {"mcpServers": {server_name: server_info.config}}
+                client = Client(client_config)
 
-                # Create a prefixed tool name
+                # Create a proxy server from the client
+                # This preserves the backend server's tool schemas automatically!
+                proxy_server = FastMCP.from_client(client, name=f"{server_name}_proxy")
+
+                # Mount the proxy with the server name as prefix
+                # This creates namespaced tool names like "server__tool"
                 safe_server_name = server_name.replace("/", "_").replace("-", "_")
-                prefixed_name = f"{safe_server_name}__{tool_name}"
+                self.mcp.mount(safe_server_name, proxy_server)
 
-                # Register the tool with the gateway
-                # We use a closure to capture the server_name and tool_name
-                try:
-                    self._register_tool(prefixed_name, description, input_schema, server_name, tool_name)
-                    registered_count += 1
-                except Exception as e:
-                    skipped_count += 1
-                    skipped_tools.append((prefixed_name, str(e)))
-                    console.print(f"  [yellow]⚠ Skipped {prefixed_name}: {e}[/yellow]")
+                console.print(f"  [green]✓[/green] Mounted {server_name} with {len(server_info.tools)} tools")
+                mounted_count += 1
 
-        console.print(f"\n[green]Registered {registered_count} tools[/green]")
+            except Exception as e:
+                console.print(f"  [yellow]⚠ Failed to mount {server_name}: {e}[/yellow]")
+                skipped_count += 1
+
+        console.print(f"\n[green]Mounted {mounted_count} backend servers as proxies[/green]")
         if skipped_count > 0:
-            console.print(f"[yellow]Skipped {skipped_count} tools (incompatible signatures)[/yellow]")
-
-    def _register_tool(
-        self,
-        prefixed_name: str,
-        description: str,
-        input_schema: dict,
-        server_name: str,
-        original_tool_name: str,
-    ):
-        """Register a single tool that proxies to the backend server."""
-        # Create a proxy function that accepts specific arguments from schema
-        # We need to avoid **kwargs as FastMCP doesn't support it
-
-        # Capture variables in closure
-        _server_name = server_name
-        _original_tool_name = original_tool_name
-        _gateway = self
-
-        # Create handler that accepts arguments dict
-        async def tool_handler(arguments: dict = {}) -> Any:
-            """Proxy tool call to backend server."""
-            # DEBUG: Log received arguments from SSE client
-            console.print(f"\n[bold cyan]──────────────────────────────────────────────────────────[/bold cyan]")
-            console.print(f"[bold]Gateway Tool Call:[/bold] {prefixed_name}")
-            console.print(f"[bold]Backend Server:[/bold] {_server_name}")
-            console.print(f"[bold]Backend Tool:[/bold] {_original_tool_name}")
-            console.print(f"[bold]📥 Arguments from SSE client:[/bold]")
-            console.print(json.dumps(arguments, indent=2))
-            console.print(f"[bold cyan]──────────────────────────────────────────────────────────[/bold cyan]\n")
-
-            result = await _gateway.call_backend_tool(_server_name, _original_tool_name, arguments)
-
-            # DEBUG: Log result type
-            console.print(f"[dim]📤 Result type from backend: {type(result).__name__}[/dim]")
-            return result
-
-        # Register using the tool decorator
-        tool_handler.__name__ = prefixed_name
-        tool_handler.__doc__ = f"[{server_name}] {description}"
-
-        # Use add_tool method if available, otherwise use decorator
-        self.mcp.tool(name=prefixed_name, description=f"[{server_name}] {description}")(tool_handler)
-
-    async def call_backend_tool(self, server_name: str, tool_name: str, arguments: dict) -> Any:
-        """Call a tool on a backend server."""
-        # DEBUG: Log what we're about to forward to backend
-        console.print(f"[dim]🔄 Forwarding to backend STDIO server...[/dim]")
-        console.print(f"[dim]   Server: {server_name}[/dim]")
-        console.print(f"[dim]   Tool: {tool_name}[/dim]")
-        console.print(f"[dim]   Args (forwarding as-is): {json.dumps(arguments, indent=2)}[/dim]")
-
-        server_info = self.servers.get(server_name)
-        if not server_info:
-            return {"error": f"Server {server_name} not found"}
-
-        if not server_info.is_connected:
-            return {"error": f"Server {server_name} is not connected"}
-
-        try:
-            # Reconnect to the server and call the tool
-            client_config = {"mcpServers": {server_name: server_info.config}}
-            async with Client(client_config) as client:
-                result = await client.call_tool(tool_name, arguments)
-
-                # DEBUG: Log successful result
-                console.print(f"[dim green]✓ Backend returned result successfully[/dim green]")
-                return result
-        except Exception as e:
-            # DEBUG: Log error details
-            console.print(f"[bold red]✗ Backend tool call FAILED:[/bold red]")
-            console.print(f"[red]   Error: {str(e)}[/red]")
-            console.print(f"[red]   Type: {type(e).__name__}[/red]")
-            return {"error": f"Tool call failed: {e}"}
+            console.print(f"[yellow]Skipped {skipped_count} servers[/yellow]")
 
     async def start(self):
         """Start the gateway server."""
@@ -373,8 +308,8 @@ class MCPGateway:
         # Connect to all servers
         await self.connect_all_servers()
 
-        # Register aggregated tools
-        self.register_aggregated_tools()
+        # Mount backend servers as proxies (preserves schemas!)
+        await self.mount_proxy_servers()
 
         # Add health check endpoint
         @self.mcp.tool(name="hub_health", description="Check the health of the MCP Hub")
