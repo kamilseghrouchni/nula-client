@@ -86,6 +86,7 @@ export async function executeCode(
     const sandbox = {
       console: sandboxConsole,
       callMCPTool: mcpBridge.callMCPTool,
+      __getVirtualFS: () => virtualFS.files,
       Promise,
       setTimeout,
       setInterval,
@@ -173,64 +174,67 @@ function transpileTypeScript(code: string): string {
  * the virtual filesystem.
  */
 function wrapCodeWithImportSupport(code: string, virtualFS: VirtualFilesystem): string {
-  // For now, we'll use a simplified approach where we inline the virtual filesystem
-  // A more sophisticated implementation would create a proper module loader
+  // Create a function that will have access to the virtual filesystem
+  // and provide a require() implementation
 
-  return `
+  const wrappedCode = `
 (async function() {
-  // Virtual filesystem
-  const __virtualFS = ${JSON.stringify(virtualFS.files)};
+  // Module cache
+  const __moduleCache = new Map();
 
-  // Simple module cache
-  const __moduleCache = {};
+  // Get virtual filesystem from outer scope
+  const __virtualFS = __getVirtualFS();
 
-  // Simple require implementation for virtual modules
-  function __require(modulePath) {
-    if (__moduleCache[modulePath]) {
-      return __moduleCache[modulePath].exports;
+  // Require implementation
+  function require(modulePath) {
+    // Resolve path
+    let resolvedPath = modulePath;
+
+    // Handle relative paths
+    if (modulePath.startsWith('./') || modulePath.startsWith('../')) {
+      resolvedPath = '/workspace/' + modulePath.replace(/^\.\//, '').replace(/^\\.\\.\\//, '');
     }
 
-    const code = __virtualFS[modulePath];
-    if (!code) {
-      throw new Error('Module not found: ' + modulePath);
+    // Try adding .ts extension
+    if (!resolvedPath.endsWith('.ts') && !resolvedPath.endsWith('.js')) {
+      if (__virtualFS[resolvedPath + '.ts']) {
+        resolvedPath = resolvedPath + '.ts';
+      } else if (__virtualFS[resolvedPath + '/index.ts']) {
+        resolvedPath = resolvedPath + '/index.ts';
+      }
     }
 
+    // Check cache
+    if (__moduleCache.has(resolvedPath)) {
+      return __moduleCache.get(resolvedPath).exports;
+    }
+
+    // Get module code
+    const moduleCode = __virtualFS[resolvedPath];
+    if (!moduleCode) {
+      throw new Error('Module not found: ' + modulePath + ' (resolved to: ' + resolvedPath + ')');
+    }
+
+    // Create module object
     const module = { exports: {} };
     const exports = module.exports;
 
-    // Create module function
-    const moduleFunc = new Function('exports', 'module', '__require', 'callMCPTool', code);
-    moduleFunc(exports, module, __require, callMCPTool);
+    // Transpile and evaluate module code
+    const moduleWrapper = new Function('exports', 'module', 'require', 'callMCPTool', 'console', moduleCode);
+    moduleWrapper(exports, module, require, callMCPTool, console);
 
-    __moduleCache[modulePath] = module;
+    // Cache it
+    __moduleCache.set(resolvedPath, module);
+
     return module.exports;
   }
 
-  // Import helper for ES6 imports
-  function __import(modulePath) {
-    // Resolve relative paths
-    if (modulePath.startsWith('./') || modulePath.startsWith('../')) {
-      // For simplicity, assume imports are from /workspace/
-      if (!modulePath.startsWith('/')) {
-        modulePath = '/workspace/' + modulePath.replace(/^\.\//, '');
-      }
-    }
-
-    // Add .ts extension if not present
-    if (!modulePath.endsWith('.ts') && !modulePath.endsWith('.js')) {
-      // Try .ts first, then /index.ts
-      if (__virtualFS[modulePath + '.ts']) {
-        modulePath = modulePath + '.ts';
-      } else if (__virtualFS[modulePath + '/index.ts']) {
-        modulePath = modulePath + '/index.ts';
-      }
-    }
-
-    return __require(modulePath);
-  }
-
-  // Execute user code
+  // Execute user code with require available
   ${code}
+
+  return undefined;
 })();
   `;
+
+  return wrappedCode;
 }
