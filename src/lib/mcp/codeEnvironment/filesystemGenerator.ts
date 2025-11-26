@@ -104,21 +104,54 @@ function generateServerTools(
 }
 
 /**
+ * Generate JSDoc parameter documentation from JSON schema
+ */
+function generateParamDocs(schema: any): string {
+  if (!schema?.properties || Object.keys(schema.properties).length === 0) {
+    return ' * @param {Object} input - Tool input parameters';
+  }
+
+  const lines = [' * @param {Object} input - Tool input parameters'];
+  const required = schema.required || [];
+
+  for (const [propName, propSchema] of Object.entries(schema.properties)) {
+    const prop = propSchema as any;
+    const isRequired = required.includes(propName);
+    const tsType = jsonSchemaTypeToTS(prop);
+    const description = prop.description || 'Parameter value';
+
+    // Format: @param {type} [input.param] - description (for optional)
+    //         @param {type} input.param - description (for required)
+    if (isRequired) {
+      lines.push(` * @param {${tsType}} input.${propName} - ${description}`);
+    } else {
+      lines.push(` * @param {${tsType}} [input.${propName}] - ${description}`);
+    }
+  }
+
+  return lines.join('\n');
+}
+
+/**
  * Generate TypeScript file for a single tool
  */
 function generateToolFile(serverName: string, tool: any): string {
   const toolName = tool.name;
   const description = tool.description || `${toolName} from ${serverName}`;
+  const inputSchema = tool.inputSchema || {};
 
   // Generate function signature
   const fullToolName = `${serverName}__${toolName}`;
+
+  // Generate JSDoc parameter documentation
+  const paramDocs = generateParamDocs(inputSchema);
 
   // Generate pure JavaScript CommonJS module (no TypeScript, no ES6 modules)
   return `/**
  * ${description}
  *
- * This is a generated MCP tool wrapper.
- * Call with appropriate arguments as defined by the tool schema.
+${paramDocs}
+ * @returns {Promise<Object>} Tool execution result
  */
 async function ${toolName}(input) {
   return callMCPTool('${fullToolName}', input);
