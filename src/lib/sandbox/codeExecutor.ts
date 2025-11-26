@@ -252,8 +252,10 @@ function require(modulePath) {
   let resolvedPath = modulePath;
 
   // Handle relative paths
-  if (modulePath.startsWith('./') || modulePath.startsWith('../')) {
-    resolvedPath = '/workspace/' + modulePath.replace(/^\.\//, '').replace(/^\\.\\.\\//, '');
+  if (modulePath.startsWith('./')) {
+    resolvedPath = '/workspace/' + modulePath.slice(2);  // Remove './'
+  } else if (modulePath.startsWith('../')) {
+    resolvedPath = '/workspace/' + modulePath.slice(3);  // Remove '../'
   }
 
   // Try adding .ts extension
