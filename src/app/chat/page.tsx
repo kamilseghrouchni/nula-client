@@ -552,22 +552,18 @@ export default function ChatPage() {
                 />
               ))}
 
-              {/* Immediate "Thinking" indicator during request processing (submitted = waiting for stream, streaming = active stream) */}
+              {/* Loading indicator only shows during cold start (no assistant message yet) */}
               {(() => {
-                // FIX: Show indicator during streaming OR when there's no assistant message yet
                 const isActivelyStreaming = status === 'submitted' || status === 'streaming';
-                const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
-                const hasAssistantResponse = messages.some(m => m.role === 'assistant' && (m.parts?.length > 0 || (m as any).content));
+                const hasAssistantMessage = messages.some(m => m.role === 'assistant');
 
-                // Show if: streaming AND (no assistant message yet OR last message is from user)
-                const showIndicator = isActivelyStreaming && (!hasAssistantResponse || lastMessage?.role === 'user');
+                // Only show during initial cold start - once assistant message exists, MessageItem handles it
+                const showIndicator = isActivelyStreaming && !hasAssistantMessage;
 
-                console.log(`[Loading Indicator] 🔍 Check:`, {
+                console.log(`[Loading Indicator] 🔍 Cold Start Check:`, {
                   status,
-                  isActivelyStreaming,
-                  hasAssistantResponse,
-                  lastMessageRole: lastMessage?.role,
-                  showIndicator: showIndicator ? '✅ SHOWING' : '❌ HIDDEN',
+                  hasAssistantMessage,
+                  showIndicator: showIndicator ? '✅ SHOWING (cold start)' : '❌ HIDDEN (MessageItem handles)',
                   messageCount: messages.length
                 });
 
@@ -582,7 +578,7 @@ export default function ChatPage() {
                       <div className="flex items-center gap-3 text-muted-foreground">
                         <Loader2 className="w-5 h-5 animate-spin" />
                         <span className="text-sm font-medium">
-                          {status === 'submitted' ? 'Connecting to analysis tools...' : 'Thinking...'}
+                          {status === 'submitted' ? 'Connecting to analysis tools...' : 'Initializing...'}
                         </span>
                       </div>
                     </div>

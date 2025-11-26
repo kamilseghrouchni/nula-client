@@ -222,42 +222,56 @@ export const MessageItem = memo(function MessageItem({ message, isStreaming = fa
     };
   }, [message.parts]);
 
-  const hasThinkingActivity = thinkingSteps.length > 0;
+  // Simplified phase detection using a state machine approach
+  const phase = useMemo(() => {
+    const hasThinkingActivity = thinkingSteps.length > 0;
+    const hasActiveTools = thinkingSteps.some(step =>
+      step.type === 'tool' &&
+      (step.content._normalized.state === 'partial' || !step.content._normalized.result)
+    );
 
-  // Check if there are any tools currently in progress or just called
-  const hasActiveTools = useMemo(() => {
-    return thinkingSteps.some(step => {
-      if (step.type === 'tool') {
-        const tool = step.content;
-        const normalized = tool._normalized;
-        // Check for in-progress tools (partial state) or tools without results yet
-        return normalized.state === 'partial' || !normalized.result;
-      }
-      return false;
-    });
-  }, [thinkingSteps]);
+    // State machine: Complete → Thinking → Generating
+    if (!isStreaming) {
+      return {
+        state: 'complete' as const,
+        label: 'Thought for a few seconds',
+        icon: 'brain',
+        shouldExpand: false
+      };
+    }
 
-  // Determine phase: thinking vs generating vs complete
-  // isThinkingPhase: Still executing tools OR tools in progress → show "Thinking..."
-  // isGeneratingPhase: Tools done, response text coming in → show "Generating..."
-  // isComplete: Everything done → show "Thought for X seconds" and final text
-  const isThinkingPhase = isStreaming && hasThinkingActivity && (!finalText || hasActiveTools);
-  const isGeneratingPhase = isStreaming && finalText && hasThinkingActivity && !hasActiveTools;
-  const isComplete = !isStreaming;
+    if (hasActiveTools || !finalText) {
+      return {
+        state: 'thinking' as const,
+        label: 'Thinking...',
+        icon: 'spinner',
+        shouldExpand: true
+      };
+    }
 
-  // FIX: Auto-expand Task section when actively thinking or generating
-  const shouldAutoExpand = isThinkingPhase || isGeneratingPhase;
+    if (finalText && hasThinkingActivity) {
+      return {
+        state: 'generating' as const,
+        label: 'Generating...',
+        icon: 'spinner',
+        shouldExpand: true
+      };
+    }
 
-  console.log(`[MessageItem] 🧠 Phase Detection:`, {
+    // Fallback
+    return {
+      state: 'idle' as const,
+      label: '',
+      icon: 'brain',
+      shouldExpand: false
+    };
+  }, [isStreaming, thinkingSteps, finalText]);
+
+  console.log(`[MessageItem] 🧠 Phase:`, {
     messageId: message.id.substring(0, 8),
-    isStreaming,
-    hasThinkingActivity,
-    hasActiveTools: hasActiveTools ? '⚙️ TOOLS RUNNING' : '✓ Tools done',
-    hasFinalText: !!finalText,
-    isThinkingPhase: isThinkingPhase ? '🤔 THINKING' : '-',
-    isGeneratingPhase: isGeneratingPhase ? '✍️ GENERATING' : '-',
-    isComplete: isComplete ? '✅ COMPLETE' : '-',
-    shouldAutoExpand: shouldAutoExpand ? '📂 EXPANDED' : '📁 COLLAPSED',
+    phase: phase.state.toUpperCase(),
+    label: phase.label,
+    shouldExpand: phase.shouldExpand ? '📂 EXPANDED' : '📁 COLLAPSED',
     thinkingStepsCount: thinkingSteps.length
   });
 
@@ -270,27 +284,16 @@ export const MessageItem = memo(function MessageItem({ message, isStreaming = fa
         />
         <MessageContent variant="flat">
           {/* Thinking Section - Task-based workflow with aesthetics */}
-          {hasThinkingActivity && (
+          {thinkingSteps.length > 0 && (
             <div className="not-prose mb-4 rounded-md border border-border bg-card backdrop-blur-sm transition-smooth glow-border">
-              <Task className="w-full" defaultOpen={shouldAutoExpand}>
+              <Task className="w-full" defaultOpen={phase.shouldExpand}>
                 <CollapsibleTrigger className="flex w-full items-center gap-2 sm:gap-3 text-muted-foreground text-sm sm:text-base md:text-lg transition-smooth hover:text-foreground p-3 sm:p-4 md:p-5">
-                  {(isThinkingPhase || isGeneratingPhase) ? (
+                  {phase.icon === 'spinner' ? (
                     <Loader2 className="size-5 animate-spin pulse-glow" />
                   ) : (
                     <BrainIcon className="size-5" />
                   )}
-                  {isThinkingPhase && (() => {
-                    console.log(`[MessageItem] 🤔 Showing "Thinking..." animation`);
-                    return <span>Thinking...</span>;
-                  })()}
-                  {isGeneratingPhase && (() => {
-                    console.log(`[MessageItem] ✍️ Showing "Generating..." animation`);
-                    return <span>Generating...</span>;
-                  })()}
-                  {isComplete && (() => {
-                    console.log(`[MessageItem] ✅ Showing "Thought for a few seconds"`);
-                    return <span>Thought for a few seconds</span>;
-                  })()}
+                  <span>{phase.label}</span>
                   <ChevronDownIcon className="size-6 ml-auto transition-transform" />
                 </CollapsibleTrigger>
               <TaskContent className={cn(
@@ -409,7 +412,7 @@ export const MessageItem = memo(function MessageItem({ message, isStreaming = fa
         )}
 
         {/* Final Response - Only show when streaming is complete */}
-        {isComplete && finalText && (
+        {phase.state === 'complete' && finalText && (
           <Response className="mt-4">{finalText}</Response>
         )}
       </MessageContent>

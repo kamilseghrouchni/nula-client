@@ -290,6 +290,67 @@ ${filesystemTree}
    read_tool_definition(...)  // Check parameters first
    \`\`\`
 
+### Code Execution Patterns
+
+⚠️ **Your code must LOG results** - use \`console.log()\` or the code returns \`undefined\`!
+
+✅ **CORRECT: Top-level await with logging** (RECOMMENDED):
+\`\`\`typescript
+import { bc_get_uniprot_protein_info } from './servers/biocontext_hub/bc_get_uniprot_protein_info';
+
+const result = await bc_get_uniprot_protein_info({ protein_symbol: "TP53" });
+
+// Log filtered results
+console.log(JSON.stringify({
+  id: result.uniProtkbId,
+  organism: result.organism?.scientificName
+}, null, 2));
+\`\`\`
+
+❌ **WRONG: Function without calling or logging**:
+\`\`\`typescript
+async function getData() {
+  const result = await tool({ ... });
+  return result;  // ← Function defined but NEVER CALLED!
+}
+// Returns: undefined
+\`\`\`
+
+✅ **CORRECT: Function with explicit call**:
+\`\`\`typescript
+async function getData() {
+  const result = await tool({ ... });
+  return result;
+}
+
+const data = await getData();  // ← Call the function!
+console.log(data);  // ← Log the result!
+\`\`\`
+
+### Server Discovery Workflow
+
+⚠️ **ALWAYS discover servers first** - don't guess server names!
+
+\`\`\`typescript
+// Step 1: List available servers
+list_servers()
+
+// Step 2: Read tool definition to see parameters
+read_tool_definition({
+  server_name: "biocontext_hub",  // ← Use actual server name from step 1
+  tool_name: "bc_get_uniprot_protein_info"
+})
+
+// Step 3: Execute code with correct parameters
+execute_code({
+  code: \`
+    import { bc_get_uniprot_protein_info } from './servers/biocontext_hub/bc_get_uniprot_protein_info';
+    const result = await bc_get_uniprot_protein_info({ protein_symbol: "TP53" });
+    console.log({ id: result.uniProtkbId });
+  \`
+})
+\`\`\`
+
 ### Data Filtering (CRITICAL for Large Results)
 
 MCP tools may return massive JSON objects (100k+ characters). You MUST filter data in code:
@@ -312,7 +373,7 @@ console.log(JSON.stringify(summary, null, 2));
 
 - All code runs in a secure sandbox (5 second timeout, 512MB memory limit)
 - Use static imports: \`import { X } from './servers/Y/X'\`
-- Only \`console.log()\` output returns to you
+- **MUST use console.log()** - only logged data returns to you
 - Import paths are relative: \`./servers/{server_name}/{tool_name}\`
 - Check JSDoc comments in tool definitions for parameter details
 `;

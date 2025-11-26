@@ -131,21 +131,21 @@ function createBlockedModuleMock(moduleName: string) {
  */
 export function validateCode(code: string): { valid: boolean; error?: string } {
   // Check for dangerous patterns
+  // Note: We allow virtual filesystem paths like './servers/...' but block direct Node.js modules
   const dangerousPatterns = [
-    /require\s*\(\s*['"]fs['"]\s*\)/,
-    /require\s*\(\s*['"]child_process['"]\s*\)/,
-    /require\s*\(\s*['"]net['"]\s*\)/,
-    /process\.exit/,
-    /process\.kill/,
-    /__dirname/,
-    /__filename/,
+    // Block direct Node.js module requires (but allow paths starting with . or /)
+    { pattern: /require\s*\(\s*['"](?!\.{0,2}\/)(fs|child_process|net|http|https)['"]\s*\)/, name: 'Node.js module require' },
+    { pattern: /process\.exit/, name: 'process.exit' },
+    { pattern: /process\.kill/, name: 'process.kill' },
+    { pattern: /__dirname/, name: '__dirname' },
+    { pattern: /__filename/, name: '__filename' },
   ];
 
-  for (const pattern of dangerousPatterns) {
+  for (const { pattern, name } of dangerousPatterns) {
     if (pattern.test(code)) {
       return {
         valid: false,
-        error: `Code contains blocked pattern: ${pattern.source}`,
+        error: `Code contains blocked pattern: ${name}`,
       };
     }
   }
