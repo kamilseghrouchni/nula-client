@@ -289,15 +289,69 @@ Backend Tool: bc_get_uniprot_protein_info
 
 ---
 
+## Resolution
+
+### Root Cause Identified
+
+The issue was in how the gateway registered backend tools. The original implementation used a generic handler:
+
+```python
+async def tool_handler(arguments: dict = {}) -> Any:
+    # Forward to backend
+```
+
+FastMCP generates tool schemas from Python type hints, so this created a generic schema for ALL tools:
+```json
+{
+  "properties": {
+    "arguments": {"type": "object", "additionalProperties": true}
+  }
+}
+```
+
+Backend tool schemas with specific parameters like `gene_symbol`, `protein_symbol` were lost.
+
+### Fix Implemented
+
+Refactored gateway to use FastMCP's proxy mounting pattern:
+
+```python
+async def mount_proxy_servers(self):
+    for server_name, server_info in self.servers.items():
+        # Create client for backend
+        client_config = {"mcpServers": {server_name: server_info.config}}
+        client = Client(client_config)
+
+        # Create proxy server (preserves schemas!)
+        proxy_server = FastMCP.from_client(client, name=f"{server_name}_proxy")
+
+        # Mount with prefix for namespacing
+        safe_server_name = server_name.replace("/", "_").replace("-", "_")
+        self.mcp.mount(safe_server_name, proxy_server)
+```
+
+**Benefits:**
+- Automatically preserves complete backend tool schemas
+- No manual parameter transformation needed
+- Official FastMCP pattern for proxy servers
+- Maintains tool namespacing
+
+### Testing Steps
+
+After rebuilding the Docker image:
+
+1. Start gateway: `docker-compose up`
+2. Check browser console for tool schemas - should show actual parameter names
+3. Test tool call with real parameters (e.g., `gene_symbol: "TP53"`)
+4. Verify no Pydantic validation errors
+5. Confirm both STDIO (local) and SSE (gateway) work identically
+
 ## Next Steps
 
-Once you have the complete log output:
-
-1. **Share the logs** - Post complete browser console + Docker logs
-2. **Identify the transformation point** - Where do parameter names change?
-3. **Implement the fix** - Based on the scenario identified
-4. **Test both transports** - Verify STDIO and SSE both work
-5. **Clean up debug logging** - Remove or reduce logging once fixed
+1. **Rebuild Docker image** - Include updated gateway.py with proxy mounting
+2. **Test schema exposure** - Verify tools show actual parameter names
+3. **Test tool calls** - Confirm Pydantic validation passes
+4. **Clean up debug logging** - Remove or reduce logging once confirmed working
 
 ---
 

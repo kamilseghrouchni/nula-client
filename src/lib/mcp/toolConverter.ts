@@ -148,7 +148,10 @@ export async function convertMCPToolsToAISDK(
               console.log(`[ToolConverter] 🔍 Executing ${toolName} with args from Claude:`, JSON.stringify(args, null, 2));
 
               // TRANSFORM: Convert camelCase to snake_case for Python MCP servers
-              // Python uses snake_case (gene_symbol) but JSON schemas often expose camelCase (geneSymbol)
+              // NOTE: With FastMCP proxy mounting (gateway.py refactor), backend servers
+              // now expose their actual snake_case schemas. This transformation should
+              // become a no-op as Claude will already use snake_case parameter names.
+              // Keeping this as defensive programming for now.
               const transformedArgs = Object.fromEntries(
                 Object.entries(args).map(([key, value]) => {
                   const snakeCase = key.replace(/([A-Z])/g, '_$1').toLowerCase();
