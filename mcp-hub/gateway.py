@@ -313,7 +313,20 @@ class MCPGateway:
         # Create handler that accepts arguments dict
         async def tool_handler(arguments: dict = {}) -> Any:
             """Proxy tool call to backend server."""
-            return await _gateway.call_backend_tool(_server_name, _original_tool_name, arguments)
+            # DEBUG: Log received arguments from SSE client
+            console.print(f"\n[bold cyan]──────────────────────────────────────────────────────────[/bold cyan]")
+            console.print(f"[bold]Gateway Tool Call:[/bold] {prefixed_name}")
+            console.print(f"[bold]Backend Server:[/bold] {_server_name}")
+            console.print(f"[bold]Backend Tool:[/bold] {_original_tool_name}")
+            console.print(f"[bold]📥 Arguments from SSE client:[/bold]")
+            console.print(json.dumps(arguments, indent=2))
+            console.print(f"[bold cyan]──────────────────────────────────────────────────────────[/bold cyan]\n")
+
+            result = await _gateway.call_backend_tool(_server_name, _original_tool_name, arguments)
+
+            # DEBUG: Log result type
+            console.print(f"[dim]📤 Result type from backend: {type(result).__name__}[/dim]")
+            return result
 
         # Register using the tool decorator
         tool_handler.__name__ = prefixed_name
@@ -324,6 +337,12 @@ class MCPGateway:
 
     async def call_backend_tool(self, server_name: str, tool_name: str, arguments: dict) -> Any:
         """Call a tool on a backend server."""
+        # DEBUG: Log what we're about to forward to backend
+        console.print(f"[dim]🔄 Forwarding to backend STDIO server...[/dim]")
+        console.print(f"[dim]   Server: {server_name}[/dim]")
+        console.print(f"[dim]   Tool: {tool_name}[/dim]")
+        console.print(f"[dim]   Args (forwarding as-is): {json.dumps(arguments, indent=2)}[/dim]")
+
         server_info = self.servers.get(server_name)
         if not server_info:
             return {"error": f"Server {server_name} not found"}
@@ -336,8 +355,15 @@ class MCPGateway:
             client_config = {"mcpServers": {server_name: server_info.config}}
             async with Client(client_config) as client:
                 result = await client.call_tool(tool_name, arguments)
+
+                # DEBUG: Log successful result
+                console.print(f"[dim green]✓ Backend returned result successfully[/dim green]")
                 return result
         except Exception as e:
+            # DEBUG: Log error details
+            console.print(f"[bold red]✗ Backend tool call FAILED:[/bold red]")
+            console.print(f"[red]   Error: {str(e)}[/red]")
+            console.print(f"[red]   Type: {type(e).__name__}[/red]")
             return {"error": f"Tool call failed: {e}"}
 
     async def start(self):
