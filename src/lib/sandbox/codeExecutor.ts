@@ -60,8 +60,18 @@ export async function executeCode(
       };
     }
 
+    // Wrap code in async function to support top-level await
+    const wrappedForTranspile = `
+(async function() {
+${code}
+})();
+    `;
+
     // Transpile TypeScript to JavaScript
-    const transpiledCode = transpileTypeScript(code);
+    const transpiledCode = transpileTypeScript(wrappedForTranspile);
+
+    // DEBUG: Log transpiled code
+    console.log('[Code Executor] Transpiled code:', transpiledCode.substring(0, 500));
 
     // Create custom console that captures output
     const sandboxConsole = {
@@ -81,6 +91,9 @@ export async function executeCode(
 
     // Wrap code to handle async and imports
     const wrappedCode = wrapCodeWithImportSupport(transpiledCode, virtualFS);
+
+    // DEBUG: Log wrapped code
+    console.log('[Code Executor] Wrapped code:', wrappedCode.substring(0, 800));
 
     // Create sandbox context
     const sandbox = {
@@ -174,66 +187,62 @@ function transpileTypeScript(code: string): string {
  * the virtual filesystem.
  */
 function wrapCodeWithImportSupport(code: string, virtualFS: VirtualFilesystem): string {
-  // Create a function that will have access to the virtual filesystem
-  // and provide a require() implementation
+  // The code is already wrapped in an async function from transpilation
+  // We just need to provide the require() implementation
 
   const wrappedCode = `
-(async function() {
-  // Module cache
-  const __moduleCache = new Map();
+// Module cache
+const __moduleCache = new Map();
 
-  // Get virtual filesystem from outer scope
-  const __virtualFS = __getVirtualFS();
+// Get virtual filesystem from outer scope
+const __virtualFS = __getVirtualFS();
 
-  // Require implementation
-  function require(modulePath) {
-    // Resolve path
-    let resolvedPath = modulePath;
+// Require implementation
+function require(modulePath) {
+  // Resolve path
+  let resolvedPath = modulePath;
 
-    // Handle relative paths
-    if (modulePath.startsWith('./') || modulePath.startsWith('../')) {
-      resolvedPath = '/workspace/' + modulePath.replace(/^\.\//, '').replace(/^\\.\\.\\//, '');
-    }
-
-    // Try adding .ts extension
-    if (!resolvedPath.endsWith('.ts') && !resolvedPath.endsWith('.js')) {
-      if (__virtualFS[resolvedPath + '.ts']) {
-        resolvedPath = resolvedPath + '.ts';
-      } else if (__virtualFS[resolvedPath + '/index.ts']) {
-        resolvedPath = resolvedPath + '/index.ts';
-      }
-    }
-
-    // Check cache
-    if (__moduleCache.has(resolvedPath)) {
-      return __moduleCache.get(resolvedPath).exports;
-    }
-
-    // Get module code
-    const moduleCode = __virtualFS[resolvedPath];
-    if (!moduleCode) {
-      throw new Error('Module not found: ' + modulePath + ' (resolved to: ' + resolvedPath + ')');
-    }
-
-    // Create module object
-    const module = { exports: {} };
-    const exports = module.exports;
-
-    // Transpile and evaluate module code
-    const moduleWrapper = new Function('exports', 'module', 'require', 'callMCPTool', 'console', moduleCode);
-    moduleWrapper(exports, module, require, callMCPTool, console);
-
-    // Cache it
-    __moduleCache.set(resolvedPath, module);
-
-    return module.exports;
+  // Handle relative paths
+  if (modulePath.startsWith('./') || modulePath.startsWith('../')) {
+    resolvedPath = '/workspace/' + modulePath.replace(/^\.\//, '').replace(/^\\.\\.\\//, '');
   }
 
-  // Execute user code with require available
-  ${code}
+  // Try adding .ts extension
+  if (!resolvedPath.endsWith('.ts') && !resolvedPath.endsWith('.js')) {
+    if (__virtualFS[resolvedPath + '.ts']) {
+      resolvedPath = resolvedPath + '.ts';
+    } else if (__virtualFS[resolvedPath + '/index.ts']) {
+      resolvedPath = resolvedPath + '/index.ts';
+    }
+  }
 
-  return undefined;
-})();
+  // Check cache
+  if (__moduleCache.has(resolvedPath)) {
+    return __moduleCache.get(resolvedPath).exports;
+  }
+
+  // Get module code
+  const moduleCode = __virtualFS[resolvedPath];
+  if (!moduleCode) {
+    throw new Error('Module not found: ' + modulePath + ' (resolved to: ' + resolvedPath + ')');
+  }
+
+  // Create module object
+  const module = { exports: {} };
+  const exports = module.exports;
+
+  // Transpile and evaluate module code
+  const moduleWrapper = new Function('exports', 'module', 'require', 'callMCPTool', 'console', moduleCode);
+  moduleWrapper(exports, module, require, callMCPTool, console);
+
+  // Cache it
+  __moduleCache.set(resolvedPath, module);
+
+  return module.exports;
+}
+
+// Execute transpiled user code (already wrapped in async function)
+${code}
   `;
 
   return wrappedCode;
