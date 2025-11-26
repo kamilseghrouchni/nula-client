@@ -1,0 +1,266 @@
+/**
+ * Virtual Filesystem Generator for MCP Tools
+ *
+ * Transforms MCP tool schemas into a virtual filesystem of TypeScript modules.
+ * Each tool becomes an importable function with proper type definitions.
+ *
+ * This enables progressive disclosure: Claude can explore the filesystem and
+ * load only the tool definitions it needs, rather than loading all 250-350
+ * tool definitions upfront (which consumes 235k+ tokens).
+ */
+
+import type { Tool } from '@ai-sdk/provider-utils';
+import type { MCPSession } from 'mcp-use';
+import type { VirtualFilesystem } from './virtualFilesystem';
+
+/**
+ * Generate virtual filesystem from MCP sessions
+ *
+ * Creates a filesystem structure like:
+ * /workspace/
+ *   servers/
+ *     biocontext_hub/
+ *       index.ts
+ *       bc_get_uniprot_protein_info.ts
+ *       search_diseases.ts
+ *     sleepyrat/
+ *       index.ts
+ *       analyze.ts
+ *   client.ts
+ */
+export function generateVirtualFilesystem(
+  sessions: Record<string, MCPSession>
+): VirtualFilesystem {
+  const files: Record<string, string> = {};
+
+  // Generate client.ts (MCP bridge)
+  files['/workspace/client.ts'] = generateClientBridge();
+
+  // Generate tool files for each server
+  const serverNames: string[] = [];
+
+  for (const [serverName, session] of Object.entries(sessions)) {
+    const toolFiles = generateServerTools(serverName, session);
+
+    for (const [path, content] of Object.entries(toolFiles)) {
+      files[path] = content;
+    }
+
+    serverNames.push(serverName);
+  }
+
+  // Generate main index that re-exports all servers
+  files['/workspace/index.ts'] = generateMainIndex(serverNames);
+
+  return { files };
+}
+
+/**
+ * Generate client.ts - the MCP bridge that tools will use
+ */
+function generateClientBridge(): string {
+  return `/**
+ * MCP Client Bridge
+ *
+ * This module provides the callMCPTool function that routes tool calls
+ * to the appropriate MCP server. This is injected by the sandbox runtime.
+ */
+
+export interface MCPToolResult {
+  content?: any;
+  error?: string;
+}
+
+/**
+ * Call an MCP tool by name with given arguments
+ *
+ * @param toolName - Full namespaced tool name (e.g., 'biocontext-hub__bc_get_uniprot_protein_info')
+ * @param args - Tool arguments as object
+ * @returns Tool execution result
+ */
+export async function callMCPTool<T = any>(
+  toolName: string,
+  args: Record<string, any>
+): Promise<T> {
+  // This function is replaced by the sandbox runtime with actual MCP bridge
+  throw new Error('callMCPTool must be called within execution sandbox');
+}
+`;
+}
+
+/**
+ * Generate all tool files for a single server
+ */
+function generateServerTools(
+  serverName: string,
+  session: MCPSession
+): Record<string, string> {
+  const files: Record<string, string> = {};
+  const safeName = sanitizeServerName(serverName);
+
+  const tools = session.connector.tools;
+  const toolNames: string[] = [];
+
+  for (const tool of tools) {
+    const toolName = tool.name;
+    const toolFile = generateToolFile(serverName, tool);
+
+    const filePath = `/workspace/servers/${safeName}/${toolName}.ts`;
+    files[filePath] = toolFile;
+    toolNames.push(toolName);
+  }
+
+  // Generate index.ts that exports all tools
+  files[`/workspace/servers/${safeName}/index.ts`] = generateServerIndex(toolNames);
+
+  return files;
+}
+
+/**
+ * Generate TypeScript file for a single tool
+ */
+function generateToolFile(serverName: string, tool: any): string {
+  const toolName = tool.name;
+  const description = tool.description || `${toolName} from ${serverName}`;
+  const inputSchema = tool.inputSchema || {};
+
+  // Extract parameter types from schema
+  const interfaceName = toPascalCase(toolName) + 'Input';
+  const inputInterface = generateInputInterface(interfaceName, inputSchema);
+
+  // Generate function signature
+  const fullToolName = `${serverName}__${toolName}`;
+
+  return `import { callMCPTool } from "../../client";
+
+${inputInterface}
+
+/**
+ * ${description}
+ */
+export async function ${toolName}(input: ${interfaceName}): Promise<any> {
+  return callMCPTool('${fullToolName}', input);
+}
+`;
+}
+
+/**
+ * Generate TypeScript interface from JSON schema
+ */
+function generateInputInterface(interfaceName: string, schema: any): string {
+  if (!schema.properties || Object.keys(schema.properties).length === 0) {
+    return `export interface ${interfaceName} {}`;
+  }
+
+  const properties = schema.properties;
+  const required = schema.required || [];
+
+  const fields: string[] = [];
+
+  for (const [propName, propSchema] of Object.entries(properties)) {
+    const prop = propSchema as any;
+    const isRequired = required.includes(propName);
+    const optional = isRequired ? '' : '?';
+    const tsType = jsonSchemaTypeToTS(prop);
+    const comment = prop.description ? `  /** ${prop.description} */\n` : '';
+
+    fields.push(`${comment}  ${propName}${optional}: ${tsType};`);
+  }
+
+  return `export interface ${interfaceName} {\n${fields.join('\n')}\n}`;
+}
+
+/**
+ * Convert JSON Schema type to TypeScript type
+ */
+function jsonSchemaTypeToTS(schema: any): string {
+  // Handle anyOf (union types)
+  if (schema.anyOf) {
+    const types = schema.anyOf.map((s: any) => jsonSchemaTypeToTS(s));
+    return types.join(' | ');
+  }
+
+  // Handle arrays
+  if (schema.type === 'array') {
+    if (schema.items) {
+      const itemType = jsonSchemaTypeToTS(schema.items);
+      return `${itemType}[]`;
+    }
+    return 'any[]';
+  }
+
+  // Handle objects
+  if (schema.type === 'object') {
+    if (schema.additionalProperties) {
+      return 'Record<string, any>';
+    }
+    return 'object';
+  }
+
+  // Handle primitives
+  switch (schema.type) {
+    case 'string':
+      return 'string';
+    case 'number':
+    case 'integer':
+      return 'number';
+    case 'boolean':
+      return 'boolean';
+    case 'null':
+      return 'null';
+    default:
+      return 'any';
+  }
+}
+
+/**
+ * Generate index.ts for a server that exports all its tools
+ */
+function generateServerIndex(toolNames: string[]): string {
+  const exports = toolNames.map(name => `export * from './${name}';`).join('\n');
+
+  return `/**
+ * Server tools index
+ * Re-exports all tools from this MCP server
+ */
+
+${exports}
+`;
+}
+
+/**
+ * Generate main index.ts that provides access to all servers
+ */
+function generateMainIndex(serverNames: string[]): string {
+  const exports = serverNames
+    .map(name => {
+      const safeName = sanitizeServerName(name);
+      return `export * as ${safeName} from './servers/${safeName}';`;
+    })
+    .join('\n');
+
+  return `/**
+ * MCP Tools Index
+ * Provides access to all MCP servers as TypeScript modules
+ */
+
+${exports}
+`;
+}
+
+/**
+ * Convert string to PascalCase
+ */
+function toPascalCase(str: string): string {
+  return str
+    .split(/[_\-\s]+/)
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join('');
+}
+
+/**
+ * Sanitize server name for use as directory/module name
+ */
+function sanitizeServerName(name: string): string {
+  return name.replace(/[^a-zA-Z0-9_]/g, '_');
+}
