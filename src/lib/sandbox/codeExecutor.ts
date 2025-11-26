@@ -14,7 +14,7 @@
  * - Native modules
  */
 
-import { VM } from 'vm2';
+import * as vm from 'vm';
 import { transpileModule, ModuleKind, ScriptTarget } from 'typescript';
 import type { VirtualFilesystem } from '../mcp/codeEnvironment/virtualFilesystem';
 import { readFile } from '../mcp/codeEnvironment/virtualFilesystem';
@@ -79,21 +79,25 @@ export async function executeCode(
       },
     };
 
-    // Create VM with sandbox environment
-    const vmConfig = getVM2Config();
-    const vm = new VM({
-      ...vmConfig,
-      sandbox: {
-        console: sandboxConsole,
-        callMCPTool: mcpBridge.callMCPTool,
-      },
-    });
-
     // Wrap code to handle async and imports
     const wrappedCode = wrapCodeWithImportSupport(transpiledCode, virtualFS);
 
-    // Execute code
-    const result = await vm.run(wrappedCode);
+    // Create sandbox context
+    const sandbox = {
+      console: sandboxConsole,
+      callMCPTool: mcpBridge.callMCPTool,
+      Promise,
+      setTimeout,
+      setInterval,
+      clearTimeout,
+      clearInterval,
+    };
+
+    // Create context and run code with timeout
+    const context = vm.createContext(sandbox);
+
+    // Execute with timeout
+    const result = await executeWithTimeout(wrappedCode, context, 5000);
 
     return {
       success: true,
@@ -109,6 +113,38 @@ export async function executeCode(
       executionTime: Date.now() - startTime,
     };
   }
+}
+
+/**
+ * Execute code with timeout
+ */
+async function executeWithTimeout(code: string, context: vm.Context, timeout: number): Promise<any> {
+  return new Promise((resolve, reject) => {
+    const timeoutId = setTimeout(() => {
+      reject(new Error(`Execution timeout after ${timeout}ms`));
+    }, timeout);
+
+    try {
+      // Run the code in the context
+      const script = new vm.Script(code);
+      const result = script.runInContext(context, {
+        timeout,
+        displayErrors: true,
+      });
+
+      clearTimeout(timeoutId);
+
+      // If result is a promise, wait for it
+      if (result && typeof result.then === 'function') {
+        result.then(resolve).catch(reject);
+      } else {
+        resolve(result);
+      }
+    } catch (error) {
+      clearTimeout(timeoutId);
+      reject(error);
+    }
+  });
 }
 
 /**
