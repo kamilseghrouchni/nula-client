@@ -143,8 +143,7 @@ export async function POST(request: Request) {
       list_servers: {
         description: 'List all available MCP servers in the code environment',
         parameters: {
-          type: 'object',
-          properties: {}
+          type: 'object'
         },
         execute: async () => {
           const servers = listDirectory(virtualFS, '/workspace/servers');
