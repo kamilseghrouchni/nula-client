@@ -109,20 +109,16 @@ function generateServerTools(
 function generateToolFile(serverName: string, tool: any): string {
   const toolName = tool.name;
   const description = tool.description || `${toolName} from ${serverName}`;
-  const inputSchema = tool.inputSchema || {};
-
-  // Extract parameter types from schema
-  const interfaceName = toPascalCase(toolName) + 'Input';
-  const inputInterface = generateInputInterface(interfaceName, inputSchema);
 
   // Generate function signature
   const fullToolName = `${serverName}__${toolName}`;
 
-  // Generate CommonJS module (not ES6) to avoid import/export issues
-  return `${inputInterface}
-
-/**
+  // Generate pure JavaScript CommonJS module (no TypeScript, no ES6 modules)
+  return `/**
  * ${description}
+ *
+ * This is a generated MCP tool wrapper.
+ * Call with appropriate arguments as defined by the tool schema.
  */
 async function ${toolName}(input) {
   return callMCPTool('${fullToolName}', input);
