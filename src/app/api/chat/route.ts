@@ -22,6 +22,8 @@ import { generateVirtualFilesystem } from '@/lib/mcp/codeEnvironment/filesystemG
 import { generateFilesystemTree, listDirectory, readFile } from '@/lib/mcp/codeEnvironment/virtualFilesystem';
 import { createMCPBridge } from '@/lib/mcp/codeEnvironment/mcpBridge';
 import { executeCode } from '@/lib/sandbox/codeExecutor';
+import { jsonSchema } from '@ai-sdk/provider-utils';
+import type { Tool } from '@ai-sdk/provider-utils';
 
 export const maxDuration = 60;
 
@@ -114,10 +116,10 @@ export async function POST(request: Request) {
 
     // Create code execution tools (only 3 tools vs 350+!)
     console.log('[Code Environment] 🛠️  Creating code execution tools...');
-    const tools: Record<string, any> = {
+    const tools: Record<string, Tool> = {
       execute_code: {
         description: 'Execute TypeScript code with access to MCP servers via imports. Use this to call MCP tools by writing code that imports and uses them.',
-        parameters: {
+        inputSchema: jsonSchema({
           type: 'object',
           properties: {
             code: {
@@ -126,7 +128,7 @@ export async function POST(request: Request) {
             }
           },
           required: ['code']
-        },
+        }),
         execute: async ({ code }: { code: string }) => {
           console.log('[Code Execution] 🚀 Executing code in sandbox...');
           const result = await executeCode(code, virtualFS, mcpBridge);
@@ -142,9 +144,9 @@ export async function POST(request: Request) {
 
       list_servers: {
         description: 'List all available MCP servers in the code environment',
-        parameters: {
+        inputSchema: jsonSchema({
           type: 'object'
-        },
+        }),
         execute: async () => {
           const servers = listDirectory(virtualFS, '/workspace/servers');
           return `Available MCP servers:\n${servers.map(s => `- ${s}`).join('\n')}`;
@@ -153,7 +155,7 @@ export async function POST(request: Request) {
 
       read_tool_definition: {
         description: 'Read the TypeScript definition for a specific MCP tool to understand its interface',
-        parameters: {
+        inputSchema: jsonSchema({
           type: 'object',
           properties: {
             server_name: {
@@ -166,7 +168,7 @@ export async function POST(request: Request) {
             }
           },
           required: ['server_name', 'tool_name']
-        },
+        }),
         execute: async ({ server_name, tool_name }: { server_name: string; tool_name: string }) => {
           try {
             const path = `/workspace/servers/${server_name}/${tool_name}.ts`;
