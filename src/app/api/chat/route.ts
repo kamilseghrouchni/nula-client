@@ -211,7 +211,16 @@ export async function POST(request: Request) {
         const codeEnvDocs = `
 ## MCP Code Execution Environment
 
-You have access to MCP servers via a TypeScript code execution environment.
+⚠️ **CRITICAL**: You do NOT have direct access to MCP tools. You can ONLY access them through code execution.
+
+### Your Available Tools (Only 3!)
+
+1. **execute_code** - Execute TypeScript code to call MCP tools
+2. **list_servers** - List available MCP servers
+3. **read_tool_definition** - Read a specific tool's interface
+
+❌ **DO NOT** try to call tools like \`bc_get_uniprot_protein_info\` directly - they are NOT available!
+✅ **DO** use \`execute_code\` to import and call them
 
 ### Available Servers
 
@@ -219,46 +228,93 @@ You have access to MCP servers via a TypeScript code execution environment.
 ${filesystemTree}
 \`\`\`
 
-### How to Use MCP Tools
+### How to Use MCP Tools (REQUIRED WORKFLOW)
 
-Instead of calling tools directly, you write TypeScript code that imports and uses them:
+1. **Read tool definition first** (to see parameters):
+   \`\`\`typescript
+   read_tool_definition({
+     server_name: "biocontext_hub",
+     tool_name: "bc_get_uniprot_protein_info"
+   })
+   \`\`\`
 
-1. **Explore servers:** Call \`list_servers()\` to see available MCP servers
-2. **Read tool definitions:** Call \`read_tool_definition(server_name, tool_name)\` to see a tool's TypeScript interface
-3. **Write code:** Import and call tools using TypeScript syntax
-4. **Execute:** Call \`execute_code({ code: "..." })\` to run your code
+2. **Write code** using static imports:
+   \`\`\`typescript
+   execute_code({
+     code: \`
+       import { bc_get_uniprot_protein_info } from './servers/biocontext_hub/bc_get_uniprot_protein_info';
 
-### Example Usage
+       const result = await bc_get_uniprot_protein_info({
+         protein_symbol: "TP53"  // Use exact parameter names from tool definition!
+       });
+
+       // ⚠️ CRITICAL: Filter large results to avoid context overflow!
+       console.log(JSON.stringify({
+         id: result.uniProtkbId,
+         organism: result.organism?.scientificName,
+         primaryAccession: result.primaryAccession
+       }, null, 2));
+     \`
+   })
+   \`\`\`
+
+### ❌ Common Mistakes to AVOID
+
+1. **Calling tools directly**:
+   \`\`\`typescript
+   // ❌ WRONG - This will fail!
+   bc_get_uniprot_protein_info({ protein_symbol: "TP53" })
+   \`\`\`
+
+2. **Using dynamic imports**:
+   \`\`\`typescript
+   // ❌ WRONG - Use static imports instead
+   const { tool } = await import('./servers/...');
+   \`\`\`
+
+3. **Logging huge JSON responses**:
+   \`\`\`typescript
+   // ❌ WRONG - This can exceed context limits!
+   console.log(JSON.stringify(result, null, 2));
+
+   // ✅ CORRECT - Filter to essentials only
+   console.log({ id: result.id, name: result.name });
+   \`\`\`
+
+4. **Guessing parameter names**:
+   \`\`\`typescript
+   // ❌ WRONG - Always read tool definition first!
+   tool({ gene_symbol: "..." })  // Might be protein_symbol!
+
+   // ✅ CORRECT - Use exact names from tool definition
+   read_tool_definition(...)  // Check parameters first
+   \`\`\`
+
+### Data Filtering (CRITICAL for Large Results)
+
+MCP tools may return massive JSON objects (100k+ characters). You MUST filter data in code:
 
 \`\`\`typescript
-// Example: Get UniProt protein info
-execute_code({
-  code: \`
-    import { bc_get_uniprot_protein_info } from './servers/biocontext_hub/bc_get_uniprot_protein_info';
+const result = await bc_get_uniprot_protein_info({ protein_symbol: "TP53" });
 
-    const result = await bc_get_uniprot_protein_info({
-      gene_symbol: "TP53"
-    });
+// Extract only what you need for the user's question
+const summary = {
+  proteinId: result.uniProtkbId,
+  organism: result.organism?.scientificName,
+  entryType: result.entryType,
+  // Add only fields relevant to user's query
+};
 
-    console.log('Protein:', result.protein_name);
-    console.log('ID:', result.protein_id);
-  \`
-})
+console.log(JSON.stringify(summary, null, 2));
 \`\`\`
 
-### Benefits
-
-- **Progressive disclosure:** Only load tool definitions you need
-- **Data filtering:** Process large datasets in code before logging results
-- **Complex workflows:** Use loops, conditionals, and error handling
-- **Context efficient:** Intermediate results stay in sandbox unless explicitly logged
-
-### Important Notes
+### Technical Notes
 
 - All code runs in a secure sandbox (5 second timeout, 512MB memory limit)
-- Use \`console.log()\` to output results - only logged data returns to you
-- Code can process and filter data without consuming your context window
+- Use static imports: \`import { X } from './servers/Y/X'\`
+- Only \`console.log()\` output returns to you
 - Import paths are relative: \`./servers/{server_name}/{tool_name}\`
+- Check JSDoc comments in tool definitions for parameter details
 `;
 
         // Build system prompt first (needed for token calculation)

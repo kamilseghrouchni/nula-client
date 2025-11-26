@@ -143,34 +143,37 @@ ${codeWithRequires}
 /**
  * Transform ES6 import statements to CommonJS require() calls
  *
- * Converts:
- *   import { foo } from './bar';
- * To:
- *   const { foo } = require('./bar');
+ * Converts static imports:
+ *   import { foo } from './bar';  →  const { foo } = require('./bar');
+ *
+ * Converts dynamic imports:
+ *   await import('./bar')  →  await Promise.resolve(require('./bar'))
  */
 function transformImportsToRequires(code: string): string {
-  // Match: import { ...exports } from '...path';
-  const namedImportRegex = /import\s*\{\s*([^}]+)\s*\}\s*from\s*['"]([^'"]+)['"]\s*;?/g;
-
-  // Match: import defaultExport from '...path';
-  const defaultImportRegex = /import\s+(\w+)\s+from\s*['"]([^'"]+)['"]\s*;?/g;
-
-  // Match: import * as name from '...path';
-  const namespaceImportRegex = /import\s*\*\s*as\s+(\w+)\s+from\s*['"]([^'"]+)['"]\s*;?/g;
-
   let transformed = code;
 
-  // Transform named imports
+  // Match dynamic imports: import('path') or await import('path')
+  // This needs to be done FIRST before static imports to avoid conflicts
+  const dynamicImportRegex = /\b(await\s+)?import\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
+  transformed = transformed.replace(dynamicImportRegex, (match, awaitKeyword, path) => {
+    // Dynamic imports return promises, so wrap require in Promise.resolve
+    return `${awaitKeyword || ''}Promise.resolve(require('${path}'))`;
+  });
+
+  // Match: import { ...exports } from '...path';
+  const namedImportRegex = /import\s*\{\s*([^}]+)\s*\}\s*from\s*['"]([^'"]+)['"]\s*;?/g;
   transformed = transformed.replace(namedImportRegex, (match, exports, path) => {
     return `const { ${exports.trim()} } = require('${path}');`;
   });
 
-  // Transform default imports
+  // Match: import defaultExport from '...path';
+  const defaultImportRegex = /import\s+(\w+)\s+from\s*['"]([^'"]+)['"]\s*;?/g;
   transformed = transformed.replace(defaultImportRegex, (match, name, path) => {
     return `const ${name} = require('${path}');`;
   });
 
-  // Transform namespace imports
+  // Match: import * as name from '...path';
+  const namespaceImportRegex = /import\s*\*\s*as\s+(\w+)\s+from\s*['"]([^'"]+)['"]\s*;?/g;
   transformed = transformed.replace(namespaceImportRegex, (match, name, path) => {
     return `const ${name} = require('${path}');`;
   });
@@ -275,7 +278,14 @@ function require(modulePath) {
   // Get module code
   const moduleCode = __virtualFS[resolvedPath];
   if (!moduleCode) {
-    throw new Error('Module not found: ' + modulePath + ' (resolved to: ' + resolvedPath + ')');
+    const availableModules = Object.keys(__virtualFS).filter(p => p.includes('/servers/')).slice(0, 10).join('\\n  ');
+    throw new Error(
+      'Module not found: ' + modulePath + '\\n' +
+      'Resolved to: ' + resolvedPath + '\\n\\n' +
+      'TIP: Use static imports instead of dynamic imports:\\n' +
+      '  import { tool_name } from \\'./servers/server_name/tool_name\\';\\n\\n' +
+      'Available modules (first 10):\\n  ' + availableModules
+    );
   }
 
   // Create module object
