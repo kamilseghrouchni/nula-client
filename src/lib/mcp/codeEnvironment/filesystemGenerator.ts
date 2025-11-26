@@ -64,27 +64,14 @@ function generateClientBridge(): string {
  *
  * This module provides the callMCPTool function that routes tool calls
  * to the appropriate MCP server. This is injected by the sandbox runtime.
- */
-
-export interface MCPToolResult {
-  content?: any;
-  error?: string;
-}
-
-/**
- * Call an MCP tool by name with given arguments
  *
- * @param toolName - Full namespaced tool name (e.g., 'biocontext-hub__bc_get_uniprot_protein_info')
- * @param args - Tool arguments as object
- * @returns Tool execution result
+ * Note: This is a CommonJS module to avoid ES6 import/export issues in the sandbox.
+ * The actual callMCPTool is provided by the sandbox context.
  */
-export async function callMCPTool<T = any>(
-  toolName: string,
-  args: Record<string, any>
-): Promise<T> {
-  // This function is replaced by the sandbox runtime with actual MCP bridge
-  throw new Error('callMCPTool must be called within execution sandbox');
-}
+
+// The callMCPTool function is injected by the sandbox
+// This module doesn't need to export anything since callMCPTool is globally available
+module.exports = {};
 `;
 }
 
@@ -131,16 +118,17 @@ function generateToolFile(serverName: string, tool: any): string {
   // Generate function signature
   const fullToolName = `${serverName}__${toolName}`;
 
-  return `import { callMCPTool } from "../../client";
-
-${inputInterface}
+  // Generate CommonJS module (not ES6) to avoid import/export issues
+  return `${inputInterface}
 
 /**
  * ${description}
  */
-export async function ${toolName}(input: ${interfaceName}): Promise<any> {
+async function ${toolName}(input) {
   return callMCPTool('${fullToolName}', input);
 }
+
+module.exports = { ${toolName} };
 `;
 }
 
@@ -217,14 +205,16 @@ function jsonSchemaTypeToTS(schema: any): string {
  * Generate index.ts for a server that exports all its tools
  */
 function generateServerIndex(toolNames: string[]): string {
-  const exports = toolNames.map(name => `export * from './${name}';`).join('\n');
+  const requires = toolNames.map(name => {
+    return `const ${name}_module = require('./${name}');\nObject.assign(exports, ${name}_module);`;
+  }).join('\n');
 
   return `/**
  * Server tools index
- * Re-exports all tools from this MCP server
+ * Re-exports all tools from this MCP server (CommonJS)
  */
 
-${exports}
+${requires}
 `;
 }
 
@@ -232,19 +222,19 @@ ${exports}
  * Generate main index.ts that provides access to all servers
  */
 function generateMainIndex(serverNames: string[]): string {
-  const exports = serverNames
+  const requires = serverNames
     .map(name => {
       const safeName = sanitizeServerName(name);
-      return `export * as ${safeName} from './servers/${safeName}';`;
+      return `exports.${safeName} = require('./servers/${safeName}');`;
     })
     .join('\n');
 
   return `/**
  * MCP Tools Index
- * Provides access to all MCP servers as TypeScript modules
+ * Provides access to all MCP servers (CommonJS)
  */
 
-${exports}
+${requires}
 `;
 }
 
