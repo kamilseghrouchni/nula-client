@@ -60,10 +60,14 @@ export async function executeCode(
       };
     }
 
+    // Transform ES6 imports to require() calls manually
+    // TypeScript transpiler doesn't handle imports inside async functions properly
+    const codeWithRequires = transformImportsToRequires(code);
+
     // Wrap code in async function to support top-level await
     const wrappedForTranspile = `
 (async function() {
-${code}
+${codeWithRequires}
 })();
     `;
 
@@ -120,6 +124,13 @@ ${code}
       executionTime: Date.now() - startTime,
     };
   } catch (error) {
+    // Enhanced error logging
+    console.error('[Code Executor] Execution error:', error);
+    console.error('[Code Executor] Error details:', {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+
     return {
       success: false,
       output: outputLines.join('\n'),
@@ -127,6 +138,44 @@ ${code}
       executionTime: Date.now() - startTime,
     };
   }
+}
+
+/**
+ * Transform ES6 import statements to CommonJS require() calls
+ *
+ * Converts:
+ *   import { foo } from './bar';
+ * To:
+ *   const { foo } = require('./bar');
+ */
+function transformImportsToRequires(code: string): string {
+  // Match: import { ...exports } from '...path';
+  const namedImportRegex = /import\s*\{\s*([^}]+)\s*\}\s*from\s*['"]([^'"]+)['"]\s*;?/g;
+
+  // Match: import defaultExport from '...path';
+  const defaultImportRegex = /import\s+(\w+)\s+from\s*['"]([^'"]+)['"]\s*;?/g;
+
+  // Match: import * as name from '...path';
+  const namespaceImportRegex = /import\s*\*\s*as\s+(\w+)\s+from\s*['"]([^'"]+)['"]\s*;?/g;
+
+  let transformed = code;
+
+  // Transform named imports
+  transformed = transformed.replace(namedImportRegex, (match, exports, path) => {
+    return `const { ${exports.trim()} } = require('${path}');`;
+  });
+
+  // Transform default imports
+  transformed = transformed.replace(defaultImportRegex, (match, name, path) => {
+    return `const ${name} = require('${path}');`;
+  });
+
+  // Transform namespace imports
+  transformed = transformed.replace(namespaceImportRegex, (match, name, path) => {
+    return `const ${name} = require('${path}');`;
+  });
+
+  return transformed;
 }
 
 /**
