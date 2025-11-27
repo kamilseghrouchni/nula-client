@@ -189,21 +189,36 @@ export async function executeCodeWithMCP(client: MCPClient, code: string) {
 
         // Create wrapper function with exact tool name
         toolNamespaces[normalizedToolName] = async (args: any) => {
+          console.log(`[TOOL CALL] ${normalizedToolName}`, args);
+
           try {
             const result = await session.connector.callTool(tool.name, args || {});
+
+            console.log(`[TOOL RESPONSE] ${normalizedToolName}:`, {
+              hasContent: !!result.content,
+              contentTypes: result.content?.map((c: any) => c.type),
+              isError: result.isError
+            });
 
             // Extract text content from result
             const textContent = result.content?.find((c: any) => c.type === 'text');
             if (textContent && textContent.text) {
               // Try to parse as JSON if possible
               try {
-                return JSON.parse(String(textContent.text));
+                const parsed = JSON.parse(String(textContent.text));
+                console.log(`[TOOL RESULT] ${normalizedToolName}: Parsed JSON successfully`);
+                return parsed;
               } catch {
+                console.log(`[TOOL RESULT] ${normalizedToolName}: Returning raw text`);
                 return String(textContent.text);
               }
             }
+
+            console.log(`[TOOL RESULT] ${normalizedToolName}: No text content, returning raw result`);
             return result;
           } catch (error) {
+            console.log(`[TOOL ERROR] ${normalizedToolName}:`, error instanceof Error ? error.message : String(error));
+
             // Enhanced error with schema info
             const enhancedMessage = enhanceValidationError(
               error instanceof Error ? error : new Error(String(error)),
@@ -214,6 +229,40 @@ export async function executeCodeWithMCP(client: MCPClient, code: string) {
           }
         };
       }
+    }
+
+    // DIAGNOSTIC: Log toolNamespaces creation
+    console.log(`[DIAGNOSTIC] toolNamespaces created with ${Object.keys(toolNamespaces).length} tools`);
+    console.log(`[DIAGNOSTIC] Available tools:`, Object.keys(toolNamespaces).sort());
+
+    // DIAGNOSTIC: Check for duplicate tool names across servers
+    const toolCounts = new Map<string, number>();
+    for (const [serverName, session] of Object.entries(sessions)) {
+      const tools = session.connector.tools || [];
+      for (const tool of tools) {
+        const normalized = tool.name.replace(/-/g, '_');
+        toolCounts.set(normalized, (toolCounts.get(normalized) || 0) + 1);
+      }
+    }
+    const duplicates = Array.from(toolCounts.entries()).filter(([_, count]) => count > 1);
+    if (duplicates.length > 0) {
+      console.log(`[DIAGNOSTIC] Duplicate tool names detected:`, duplicates);
+    }
+
+    // DIAGNOSTIC: Log schema availability for all tools
+    let toolsWithoutSchema = 0;
+    for (const [serverName, session] of Object.entries(sessions)) {
+      const tools = session.connector.tools || [];
+      for (const tool of tools) {
+        const normalized = tool.name.replace(/-/g, '_');
+        if (!tool.inputSchema) {
+          console.log(`[SCHEMA WARN] Missing input schema for ${normalized}`);
+          toolsWithoutSchema++;
+        }
+      }
+    }
+    if (toolsWithoutSchema > 0) {
+      console.log(`[SCHEMA] ${toolsWithoutSchema} tools missing input schema`);
     }
 
     // Create console implementation that captures logs
@@ -245,7 +294,32 @@ export async function executeCodeWithMCP(client: MCPClient, code: string) {
       query?: string,
       detail_level?: 'names' | 'descriptions' | 'full'
     ) => {
-      return await searchToolsWithMCP(client, query, detail_level || 'full');
+      const results = await searchToolsWithMCP(client, query, detail_level || 'full');
+
+      // VALIDATION: Filter to only show tools that are actually callable in VM context
+      const callableToolNames = new Set(Object.keys(toolNamespaces));
+      const callableResults = results.results.filter(tool =>
+        callableToolNames.has(tool.name)
+      );
+
+      // Log if any tools were filtered out
+      const filteredCount = results.results.length - callableResults.length;
+      if (filteredCount > 0) {
+        console.log(`[DIAGNOSTIC] Filtered out ${filteredCount} non-callable tools from search results`);
+        const filtered = results.results
+          .filter(t => !callableToolNames.has(t.name))
+          .map(t => t.name);
+        console.log(`[DIAGNOSTIC] Non-callable tools:`, filtered);
+      }
+
+      return {
+        meta: {
+          ...results.meta,
+          result_count: callableResults.length,
+          filtered_count: filteredCount  // Add this info
+        },
+        results: callableResults
+      };
     };
 
     // Create get_tool_schema helper for VM context
@@ -278,11 +352,21 @@ export async function executeCodeWithMCP(client: MCPClient, code: string) {
       return null;
     };
 
+    // Create debug helper for VM context
+    const __debug_tools = () => {
+      return {
+        available_in_vm: Object.keys(toolNamespaces).sort(),
+        sessions: Object.keys(sessions),
+        total_count: Object.keys(toolNamespaces).length
+      };
+    };
+
     // Create VM context with tool namespaces, search_tools, get_tool_schema, and console
     const context = vm.createContext({
       ...toolNamespaces,
       search_tools,
-      get_tool_schema,  // NEW: Runtime schema inspection
+      get_tool_schema,  // Runtime schema inspection
+      __debug_tools,    // Diagnostic helper
       console: consoleImpl,
       // Standard JavaScript built-ins
       Array, Object, String, Number, Boolean, Date, Math, JSON, RegExp, Map, Set, Promise,
