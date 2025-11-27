@@ -8,8 +8,7 @@ import {
   createUIMessageStreamResponse
 } from 'ai';
 import { getMCPClient } from '@/lib/mcp/mcpClient';
-import { convertMCPToolsToAISDK } from '@/lib/mcp/toolConverter';
-import { createSyntheticTools } from '@/lib/mcp/syntheticTools';
+import { getCodeModeTools } from '@/lib/mcp/codeModeToolConverter';
 import { listAllPrompts, formatPromptsForDisplay } from '@/lib/mcp/promptManager';
 import { SYSTEM_PROMPT } from '@/lib/prompts/system';
 import { buildDataContext, formatContextForPrompt } from '@/lib/context/dataContext';
@@ -95,18 +94,12 @@ export async function POST(request: Request) {
     const serverNames = Object.keys(sessions);
     console.log(`[MCP Initialization] 📊 Found ${serverNames.length} active session(s):`, serverNames.join(', '));
 
-    console.log('[MCP Initialization] 🛠️ Converting MCP tools to AI SDK format...');
+    console.log('[MCP Initialization] 🛠️ Getting Code Mode tools...');
     const toolsStartTime = Date.now();
-    const tools = await convertMCPToolsToAISDK(sessions);
+    const tools = await getCodeModeTools(mcpClient);
     const toolsConvertTime = Date.now() - toolsStartTime;
-    console.log(`[MCP Initialization] ✅ Converted ${Object.keys(tools).length} tools in ${toolsConvertTime}ms`);
-
-    // Add synthetic tools for MCP resources and prompts
-    console.log('[MCP Initialization] 🎨 Creating synthetic tools...');
-    const syntheticTools = await createSyntheticTools(sessions);
-    Object.assign(tools, syntheticTools);
-    console.log(`[MCP Initialization] ✅ Added ${Object.keys(syntheticTools).length} synthetic tools`);
-    console.log(`[MCP Initialization] 🎉 TOTAL: ${Object.keys(tools).length} tools available`);
+    console.log(`[MCP Initialization] ✅ Code Mode tools ready in ${toolsConvertTime}ms`);
+    console.log(`[MCP Initialization] 🎉 TOTAL: ${Object.keys(tools).length} Code Mode tools available (execute_code, search_tools)`);
 
     // List available prompts for context
     const promptsList = await listAllPrompts(sessions);
