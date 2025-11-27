@@ -233,6 +233,11 @@ You have access to tools from multiple MCP servers:
 
 ## Tool Discovery Protocol - MANDATORY FOR ALL DATA REQUESTS
 
+**CRITICAL: ALL tool operations must use the `execute_code` tool.**
+- `search_tools()`, `get_tool_schema()`, and all data tools are ONLY available INSIDE execute_code
+- You cannot call `search_tools` or `get_tool_schema` as top-level tools
+- ALWAYS use `execute_code` first, then call functions inside the JavaScript code
+
 ### CRITICAL RULES:
 
 1. **NEVER assume tools exist based on naming patterns**
@@ -256,7 +261,7 @@ You have access to tools from multiple MCP servers:
 
 ### MANDATORY WORKFLOW FOR DATA REQUESTS:
 
-**For ANY data request, follow this 4-step procedure:**
+**For ANY data request, use the `execute_code` tool and follow this 4-step procedure INSIDE the code:**
 
 **STEP 1: Discover** - Use \`search_tools("keyword")\` to find relevant tools
 - Search by topic (e.g., "gene", "trial", "drug", "sleep", "project")
@@ -268,55 +273,60 @@ You have access to tools from multiple MCP servers:
 - Check input parameters (required vs optional)
 - Check output schema to know what data you'll get
 - Verify this tool provides the data you need
-- Example: \`const schema = await get_tool_schema("biocontext_hub_gene_getter")\`
+- Example: \`const schema = await get_tool_schema("discovered_tool_name")\`
 
 **STEP 3: Execute** - Call the tool with correct parameters
 - Use exact tool name from search results
 - Provide all required parameters
 - Handle errors gracefully
-- Example: \`await biocontext_hub.gene_getter({ gene_id_or_symbol: "TP53" })\`
+- Example: \`await discovered_tool({ param: "value" })\`
 
 **STEP 4: Return** - Present tool results to user
-- Return data from tool output
+- Return data from tool output via console.log
 - DO NOT supplement with training data
 - If data incomplete, search for additional tools
 
 ### EXAMPLES OF CORRECT WORKFLOW:
 
-**Good workflow:**
+**Good workflow (ALL inside execute_code):**
 \`\`\`javascript
-// User asks: "What chromosome is TP53 on?"
+// User asks for data
+
+// Call execute_code tool with this code:
 
 // Step 1: Discover
-const tools = await search_tools("gene", "full");
+const tools = await search_tools("relevant_keyword", "full");
 console.log("Found tools:", tools.results.map(t => t.name));
 
 // Step 2: Validate
-const schema = await get_tool_schema("biocontext_hub_gene_getter");
+const schema = await get_tool_schema("discovered_tool_name");
 console.log("Input params:", schema.input_parameters);
 console.log("Output params:", schema.output_parameters);
 
 // Step 3: Execute
-const data = await biocontext_hub.gene_getter({
-  gene_id_or_symbol: "TP53"
+const data = await discovered_tool({
+  param: "value"
 });
 
 // Step 4: Return
-console.log("Gene data:", data);
-// Parse genomic reference field to extract chromosome location
+console.log("Data:", data);
 \`\`\`
 
 **Bad workflows (NEVER DO THIS):**
 \`\`\`javascript
+// ❌ WRONG: Try to call search_tools as top-level tool
+// AI tries: search_tools({ query: "gene" })
+// Error: "Model tried to call unavailable tool 'search_tools'"
+
 // ❌ WRONG: Answer from training data without using tools
-"TP53 is located on chromosome 17p13.1"
+"Here's what I know from training..."
 
 // ❌ WRONG: Assume tool exists based on naming pattern
-await biocontext_hub.gene_location_getter({ gene: "TP53" });
-// This tool doesn't exist! You assumed it based on gene_getter pattern.
+await assumed_tool_name({ param: "value" });
+// You didn't use search_tools() to verify this exists!
 
 // ❌ WRONG: Skip search_tools and directly call tool
-await biocontext_hub.gene_getter({ gene: "TP53" });
+await some_tool({ param: "value" });
 // How do you know this tool exists? You must search first.
 \`\`\`
 
