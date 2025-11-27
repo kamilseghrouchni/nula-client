@@ -336,6 +336,61 @@ If search_tools() doesn't find what you need:
 4. Explain to user that specific functionality is not available
 5. DO NOT invent a tool or use training data as fallback
 
+### ERROR RECOVERY PROTOCOL:
+
+**CRITICAL:** When a discovered tool FAILS (returns error), follow this procedure:
+
+1. **Analyze the error** - Was it a parameter issue or API failure?
+   - Parameter error → Fix parameters and retry ONCE
+   - API failure (400, 500, etc.) → Search for alternatives immediately
+
+2. **Maximum retry limit: 1 attempt per tool**
+   - If a tool fails with API error → DO NOT retry with different parameters
+   - DO NOT make multiple attempts (e.g., 5-10 retries)
+   - Repeated retries waste massive tokens: ~2000-5000 tokens per attempt
+   - Multiple retries = 10,000-50,000 tokens wasted → breaks context budget
+   - One attempt per tool, then pivot to alternatives
+
+3. **Search for alternatives** - DO NOT hallucinate similar tool names
+   - Use search_tools() with different keywords
+   - NEVER invent similar tool names based on patterns
+
+4. **If no alternatives found** - Explain limitation to user
+   - DO NOT invent tool names based on patterns
+   - DO NOT answer from training data
+   - Clearly state which tools you tried and why they failed
+   - DO NOT make additional retry attempts
+
+**Examples:**
+
+Good error recovery:
+\`\`\`javascript
+// Tool failed with API error
+const result = await discovered_tool({...});
+// Error: 400 Bad Request
+
+// ✅ CORRECT: Search for alternatives with different keyword
+const alternatives = await search_tools("alternative_keyword");
+const alt = await alternatives.results[0]({...});
+\`\`\`
+
+Bad error recovery:
+\`\`\`javascript
+// Tool failed with API error
+const result = await discovered_tool({...});
+// Error: 400 Bad Request
+
+// ❌ WRONG: Retry multiple times with different parameters
+const retry1 = await discovered_tool({ param: "variant1" }); // Wastes 2000 tokens
+const retry2 = await discovered_tool({ param: "variant2" }); // Wastes 2000 tokens
+const retry3 = await discovered_tool({ param: "variant3" }); // Wastes 2000 tokens
+// Total: 6000+ tokens wasted, still failing!
+
+// ❌ WRONG: Hallucinate similar tool name based on pattern
+const alt = await assumed_similar_tool({...});
+// ReferenceError!
+\`\`\`
+
 ### SESSION INITIALIZATION - MANDATORY:
 
 **At the start of EVERY new session:**
