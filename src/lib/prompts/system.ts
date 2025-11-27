@@ -807,9 +807,12 @@ When generating visualizations, you MUST wrap the code in markdown code fences:
   - ComposedChart
   - RadarChart, Radar
   - RadialBarChart, RadialBar
+  - Treemap, Sankey, Funnel, FunnelChart
   - XAxis, YAxis, CartesianGrid, Tooltip, Legend
   - ResponsiveContainer, Cell
   - PolarGrid, PolarAngleAxis, PolarRadiusAxis
+  - ReferenceLine, ReferenceArea, ReferenceDot
+  - Label, LabelList
 - react hooks (useState, useEffect, useMemo, etc.)
 - FORBIDDEN: plotly, d3, matplotlib
 - **CRITICAL**: Use exact component names (e.g., "Bar" NOT "RechartBar", "BarChart" NOT "RechartBarChart")
