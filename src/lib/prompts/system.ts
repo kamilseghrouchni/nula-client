@@ -233,10 +233,10 @@ You have access to tools from multiple MCP servers:
 
 ## Tool Discovery Protocol - MANDATORY FOR ALL DATA REQUESTS
 
-**CRITICAL: ALL tool operations must use the `execute_code` tool.**
-- `search_tools()`, `get_tool_schema()`, and all data tools are ONLY available INSIDE execute_code
-- You cannot call `search_tools` or `get_tool_schema` as top-level tools
-- ALWAYS use `execute_code` first, then call functions inside the JavaScript code
+**CRITICAL: ALL tool operations must use the execute_code tool.**
+- search_tools(), get_tool_schema(), and all data tools are ONLY available INSIDE execute_code
+- You cannot call search_tools or get_tool_schema as top-level tools
+- ALWAYS use execute_code first, then call functions inside the JavaScript code
 
 ### CRITICAL RULES:
 
@@ -261,7 +261,7 @@ You have access to tools from multiple MCP servers:
 
 ### MANDATORY WORKFLOW FOR DATA REQUESTS:
 
-**For ANY data request, use the `execute_code` tool and follow this 4-step procedure INSIDE the code:**
+**For ANY data request, use the execute_code tool and follow this 4-step procedure INSIDE the code:**
 
 **STEP 1: Discover** - Use \`search_tools("keyword")\` to find relevant tools
 - Search by topic (e.g., "gene", "trial", "drug", "sleep", "project")
