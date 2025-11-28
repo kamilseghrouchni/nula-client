@@ -93,6 +93,23 @@ Original error: ${errorMessage}`;
 }
 
 /**
+ * Enhance tool description with biomedical keywords for better discoverability
+ * Optimizes descriptions for BM25-style text matching
+ */
+function enhanceToolDescription(tool: any, serverName: string): string {
+  const baseDescription = tool.description || '';
+
+  // Only enhance biocontext-hub tools with biomedical keywords
+  if (serverName === 'biocontext-hub') {
+    // Add rich biomedical terminology for better search matching
+    const keywords = 'biomedical genomic molecular clinical biological research analysis';
+    return `${baseDescription} [Biomedical knowledge: ${keywords}]`;
+  }
+
+  return baseDescription;
+}
+
+/**
  * Get Code Mode tools - custom implementation
  *
  * Provides two special tools:
@@ -471,12 +488,14 @@ export async function searchToolsWithMCP(
         // Build result based on detail level
         const toolInfo: any = {
           name: normalizedToolName,  // Exact callable name
-          original_name: tool.name   // Keep original for reference
+          original_name: tool.name,   // Keep original for reference
+          server: serverName,         // Track source server for prioritization
+          _priority: serverName === 'biocontext-hub' ? 1 : 2  // biocontext-hub gets priority
         };
 
         if (detailLevel === 'descriptions' || detailLevel === 'full') {
           // CRITICAL: Augment description with parameter hints
-          let description = tool.description || '';
+          let description = enhanceToolDescription(tool, serverName);  // Enhanced with keywords
           const paramHints = formatParametersForDescription(tool.inputSchema);
 
           if (paramHints) {
@@ -505,13 +524,31 @@ export async function searchToolsWithMCP(
       }
     }
 
+    // Sort tools: biocontext-hub tools first, then others
+    allTools.sort((a, b) => {
+      // Primary sort: by priority (biocontext-hub first)
+      if (a._priority !== b._priority) {
+        return a._priority - b._priority;
+      }
+      // Secondary sort: alphabetically by name
+      return a.name.localeCompare(b.name);
+    });
+
+    // Remove internal _priority field before returning
+    const results = allTools.map(({ _priority, ...tool }) => tool);
+
+    console.log('[TOOL SEARCH] Query:', query || 'all tools');
+    console.log('[TOOL SEARCH] Top 5 results:', results.slice(0, 5).map(t =>
+      `${t.name} (${t.server})`
+    ).join(', '));
+
     return {
       meta: {
-        total_tools: allTools.length,
+        total_tools: results.length,
         namespaces: Object.keys(sessions).map(name => name.replace(/-/g, '_')),
-        result_count: allTools.length
+        result_count: results.length
       },
-      results: allTools
+      results
     };
   } catch (error) {
     throw new Error(`Tool search failed: ${error instanceof Error ? error.message : String(error)}`);
