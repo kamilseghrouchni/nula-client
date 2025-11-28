@@ -15,8 +15,6 @@ import { buildDataContext, formatContextForPrompt } from '@/lib/context/dataCont
 import { shouldSummarize, calculateContextSize } from '@/lib/utils/tokenCounter';
 import { summarizeOlderMessages, createSummaryMessage } from '@/lib/summarization/summarizer';
 import { extractPlanFromText, createPlanFromStep, savePlan } from '@/lib/cache/planCache';
-import { createModelProvider } from '@/lib/models/provider-factory';
-import { getModelById, getDefaultModel } from '@/lib/models/registry';
 
 export const maxDuration = 60;
 
@@ -25,62 +23,9 @@ export async function POST(request: Request) {
     const json = await request.json();
     const { messages } = json as { messages: UIMessage[] };
 
-    // Extract model selection from URL query parameters (fallback to default)
-    const url = new URL(request.url);
-    const modelId = url.searchParams.get('modelId');
-    const selectedModelId = modelId || getDefaultModel().id;
-
-    console.log('\n' + '='.repeat(80));
-    console.log('[Model Selection] 📥 Request received');
-    console.log('[Model Selection] 🔗 URL:', request.url);
-    console.log('[Model Selection] 📦 Query param modelId:', modelId);
-    console.log('[Model Selection] 🎯 Selected model ID:', selectedModelId);
-    console.log('='.repeat(80));
-
-    // Validate and get model configuration
-    const modelConfig = getModelById(selectedModelId);
-    console.log('[Model Selection] 🔍 Model config lookup:', {
-      requestedId: selectedModelId,
-      found: !!modelConfig,
-      config: modelConfig ? {
-        id: modelConfig.id,
-        name: modelConfig.name,
-        provider: modelConfig.provider,
-        status: modelConfig.status,
-        endpoint: modelConfig.endpoint
-      } : null
-    });
-
-    if (!modelConfig) {
-      console.error('[Model Selection] ❌ Model not found:', selectedModelId, '- falling back to default');
-      const defaultModel = getDefaultModel();
-      var model = createModelProvider(defaultModel.id);
-      var activeModelId = defaultModel.id;
-    } else if (modelConfig.status === 'unavailable') {
-      console.warn('[Model Selection] ⚠️ Model unavailable:', selectedModelId, '- falling back to default');
-      const defaultModel = getDefaultModel();
-      var model = createModelProvider(defaultModel.id);
-      var activeModelId = defaultModel.id;
-    } else {
-      // Create model provider
-      try {
-        console.log('[Model Selection] 🔨 Creating provider for:', selectedModelId, 'with config:', {
-          provider: modelConfig.provider,
-          endpoint: modelConfig.endpoint || 'default'
-        });
-        var model = createModelProvider(selectedModelId);
-        var activeModelId = selectedModelId;
-        console.log('[Model Selection] ✅ Successfully created provider for:', selectedModelId);
-      } catch (error) {
-        console.error('[Model Selection] ❌ Error creating provider:', error, '- falling back to default');
-        const defaultModel = getDefaultModel();
-        model = createModelProvider(defaultModel.id);
-        activeModelId = defaultModel.id;
-      }
-    }
-
-    console.log('[Model Selection] 🎯 FINAL ACTIVE MODEL:', activeModelId);
-    console.log('='.repeat(80) + '\n');
+    // Use Anthropic Claude Sonnet 4.5 (configurable via env)
+    const modelId = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5';
+    const model = anthropic(modelId);
 
     // Get MCP client and convert tools to AI SDK format
     console.log('[MCP Initialization] 🔌 Starting MCP client connection...');
@@ -177,7 +122,7 @@ ${contextPrompt ? '\n\nREMINDER: Check the "Session Data Context" section above 
         }
 
 
-        console.log('[Streaming] 🚀 Starting AI stream with model:', activeModelId);
+        console.log('[Streaming] 🚀 Starting AI stream with model:', modelId);
         console.log('[Streaming] 📝 Context:', {
           messagesCount: messagesWithCaching.length,
           toolsCount: Object.keys(tools).length,
