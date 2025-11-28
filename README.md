@@ -1,12 +1,5 @@
 <div align="center">
-  <img src="./public/gifs/longevity_720.gif" alt="NulaLabs - AI-powered lab notebook" width="100%">
-
-  <h1>NulaLabs</h1>
-
-  <p>
-    <strong>AI-powered lab notebook for biotech research.</strong><br/>
-    230+ tools from BioContextAI. One Docker command.
-  </p>
+  <img src="./public/gifs/nula_home_1080.gif" alt="NulaLabs - AI-powered lab notebook" width="100%">
 
   <p>
     <img src="https://img.shields.io/badge/version-v1.0-blue?style=for-the-badge" alt="Version v1.0"/>
@@ -39,8 +32,13 @@
 
 ## See It In Action
 
-### Full Workflow Demo
-The demo above shows: **"What are the top 5 hottest druggable pathways for longevity?"**
+### Full Workflow Demo: Longevity Pathway Analysis
+
+<div align="center">
+  <img src="./public/gifs/longevity_1080.gif" alt="Longevity Pathway Analysis Demo" width="100%">
+</div>
+
+**Query:** "What are the top 5 hottest druggable pathways for longevity?"
 
 **What NulaLabs does**:
 1. Queries OpenGenes database → longevity genes and lifespan experiments
@@ -204,11 +202,34 @@ Single Docker container → all BioContext Registry servers
 - Tool discovery: `search_tools(query)`
 - Multi-server orchestration in one script
 
-### 🔌 Multi-Server Support
-Built on [mcp-use](https://github.com/mcp-use/mcp-use) for seamless multi-server management
+### 🔌 Multi-Server Support & Code Execution
+
+Built on [mcp-use](https://github.com/mcp-use/mcp-use) for seamless multi-server orchestration:
+
+**JavaScript Execution Engine**
+- Run custom scripts with MCP tool access
+- `search_tools(query)` - discover tools across all servers
+- Orchestrate multiple servers in a single script
+- Full JavaScript VM with async/await support
+
+**Multi-Server Management**
 - Connect unlimited servers simultaneously
-- Graceful degradation if servers fail
+- Graceful degradation - system continues if one server fails
 - HTTP + STDIO + SSE transports
+- One config file → all servers connected
+
+**vs Manual Configuration:**
+```typescript
+// Manual approach: configure each server separately
+// mcp-use approach: one config, all servers auto-connected
+{
+  "mcpServers": {
+    "server1": { "url": "https://api1.com" },
+    "server2": { "url": "https://api2.com" }
+  }
+}
+```
+All tools merged, namespaced, ready to use.
 
 ---
 
@@ -292,11 +313,42 @@ curl http://localhost:9000/sse
 
 ## Roadmap
 
-**v1.x**: UI polish, better summarization, workflow labeling
-**v2.0**: Specialized biotech agents (BioMini), hosted option
-**v3.0+**: Multi-model support, team features
+### v1.x - Multi-Model Support
+- **Provider Flexibility**
+  - Add support for OpenAI, Google Gemini, and other providers
+  - Currently Anthropic-only; expanding to model-agnostic architecture
+  - UI provider switcher for easy model selection
+  - Cost comparison across providers
+- **Search Tool Enhancement**
+  - Make search functionality model-agnostic
+  - Support multiple AI providers in search interface
 
-See [issues](https://github.com/kamilseghrouchni/nula-client/issues) for details.
+### v2.0 - Specialized Bio-Agents
+- **BioMini**
+  - Domain-specific AI agents for biotech tasks
+  - Faster, cheaper specialized reasoning
+  - Expert-level bioanalysis performance
+- **UI Polish**
+  - Consistent workflow visualization elements
+  - Better step labeling and summarization
+  - Improved artifact gallery UI
+  - Enhanced mobile responsiveness
+
+### v3.0 - Hosted Platform
+- **Cloud Deployment**
+  - Managed hosting option
+  - Pre-configured MCP servers
+  - No local setup required
+- **Team Features**
+  - Shared lab notebooks
+  - Collaborative workflows
+  - Access control and permissions
+- **Advanced MCP Ecosystem**
+  - Custom MCP server templates
+  - Domain-specific server library
+  - Cookiecutter templates for rapid development
+
+[Track progress on GitHub Issues →](https://github.com/kamilseghrouchni/nula-client/issues)
 
 ---
 
