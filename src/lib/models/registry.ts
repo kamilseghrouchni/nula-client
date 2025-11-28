@@ -128,5 +128,5 @@ export function getModelsByProvider(provider: string): ModelConfig[] {
  * @returns Default model configuration
  */
 export function getDefaultModel(): ModelConfig {
-  return getModelById('claude-3-5-haiku-20241022') || MODEL_REGISTRY[0];
+  return getModelById('claude-haiku-3-5') || MODEL_REGISTRY[0];
 }
