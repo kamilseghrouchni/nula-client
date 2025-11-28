@@ -206,8 +206,6 @@ export async function executeCodeWithMCP(client: MCPClient, code: string) {
 
         // Create wrapper function with exact tool name
         toolNamespaces[normalizedToolName] = async (args: any) => {
-          console.log(`[TOOL CALL] ${normalizedToolName}`, args);
-
           try {
             // AUTO-INJECT AUTH TOKENS FOR SERVERS THAT NEED THEM
             let enhancedArgs = args || {};
@@ -216,7 +214,6 @@ export async function executeCodeWithMCP(client: MCPClient, code: string) {
             if (serverName === 'sleepyrat' && tool.inputSchema?.properties?.token) {
               // Auto-inject token if not provided
               if (!enhancedArgs.token && process.env.SLEEPYRAT_TOKEN) {
-                console.log(`[AUTH] Auto-injecting SLEEPYRAT_TOKEN for ${normalizedToolName}`);
                 enhancedArgs = {
                   ...enhancedArgs,
                   token: process.env.SLEEPYRAT_TOKEN
@@ -226,30 +223,20 @@ export async function executeCodeWithMCP(client: MCPClient, code: string) {
 
             const result = await session.connector.callTool(tool.name, enhancedArgs);
 
-            console.log(`[TOOL RESPONSE] ${normalizedToolName}:`, {
-              hasContent: !!result.content,
-              contentTypes: result.content?.map((c: any) => c.type),
-              isError: result.isError
-            });
-
             // Extract text content from result
             const textContent = result.content?.find((c: any) => c.type === 'text');
             if (textContent && textContent.text) {
               // Try to parse as JSON if possible
               try {
                 const parsed = JSON.parse(String(textContent.text));
-                console.log(`[TOOL RESULT] ${normalizedToolName}: Parsed JSON successfully`);
                 return parsed;
               } catch {
-                console.log(`[TOOL RESULT] ${normalizedToolName}: Returning raw text`);
                 return String(textContent.text);
               }
             }
 
-            console.log(`[TOOL RESULT] ${normalizedToolName}: No text content, returning raw result`);
             return result;
           } catch (error) {
-            console.log(`[TOOL ERROR] ${normalizedToolName}:`, error instanceof Error ? error.message : String(error));
 
             // Enhanced error with schema info
             const enhancedMessage = enhanceValidationError(
@@ -263,39 +250,6 @@ export async function executeCodeWithMCP(client: MCPClient, code: string) {
       }
     }
 
-    // DIAGNOSTIC: Log toolNamespaces creation
-    console.log(`[DIAGNOSTIC] toolNamespaces created with ${Object.keys(toolNamespaces).length} tools`);
-    console.log(`[DIAGNOSTIC] Available tools:`, Object.keys(toolNamespaces).sort());
-
-    // DIAGNOSTIC: Check for duplicate tool names across servers
-    const toolCounts = new Map<string, number>();
-    for (const [serverName, session] of Object.entries(sessions)) {
-      const tools = session.connector.tools || [];
-      for (const tool of tools) {
-        const normalized = tool.name.replace(/-/g, '_');
-        toolCounts.set(normalized, (toolCounts.get(normalized) || 0) + 1);
-      }
-    }
-    const duplicates = Array.from(toolCounts.entries()).filter(([_, count]) => count > 1);
-    if (duplicates.length > 0) {
-      console.log(`[DIAGNOSTIC] Duplicate tool names detected:`, duplicates);
-    }
-
-    // DIAGNOSTIC: Log schema availability for all tools
-    let toolsWithoutSchema = 0;
-    for (const [serverName, session] of Object.entries(sessions)) {
-      const tools = session.connector.tools || [];
-      for (const tool of tools) {
-        const normalized = tool.name.replace(/-/g, '_');
-        if (!tool.inputSchema) {
-          console.log(`[SCHEMA WARN] Missing input schema for ${normalized}`);
-          toolsWithoutSchema++;
-        }
-      }
-    }
-    if (toolsWithoutSchema > 0) {
-      console.log(`[SCHEMA] ${toolsWithoutSchema} tools missing input schema`);
-    }
 
     // Create console implementation that captures logs
     const consoleImpl = {
@@ -334,15 +288,8 @@ export async function executeCodeWithMCP(client: MCPClient, code: string) {
         callableToolNames.has(tool.name)
       );
 
-      // Log if any tools were filtered out
+      // Filter out non-callable tools from search results
       const filteredCount = results.results.length - callableResults.length;
-      if (filteredCount > 0) {
-        console.log(`[DIAGNOSTIC] Filtered out ${filteredCount} non-callable tools from search results`);
-        const filtered = results.results
-          .filter(t => !callableToolNames.has(t.name))
-          .map(t => t.name);
-        console.log(`[DIAGNOSTIC] Non-callable tools:`, filtered);
-      }
 
       return {
         meta: {
@@ -537,10 +484,6 @@ export async function searchToolsWithMCP(
     // Remove internal _priority field before returning
     const results = allTools.map(({ _priority, ...tool }) => tool);
 
-    console.log('[TOOL SEARCH] Query:', query || 'all tools');
-    console.log('[TOOL SEARCH] Top 5 results:', results.slice(0, 5).map(t =>
-      `${t.name} (${t.server})`
-    ).join(', '));
 
     return {
       meta: {

@@ -246,20 +246,8 @@ export const MessageItem = memo(function MessageItem({ message, isStreaming = fa
   const isComplete = !isStreaming;
 
   // FIX: Auto-expand Task section when actively thinking or generating
-  const shouldAutoExpand = isThinkingPhase || isGeneratingPhase;
+  const shouldAutoExpand = Boolean(isThinkingPhase || isGeneratingPhase);
 
-  console.log(`[MessageItem] 🧠 Phase Detection:`, {
-    messageId: message.id.substring(0, 8),
-    isStreaming,
-    hasThinkingActivity,
-    hasActiveTools: hasActiveTools ? '⚙️ TOOLS RUNNING' : '✓ Tools done',
-    hasFinalText: !!finalText,
-    isThinkingPhase: isThinkingPhase ? '🤔 THINKING' : '-',
-    isGeneratingPhase: isGeneratingPhase ? '✍️ GENERATING' : '-',
-    isComplete: isComplete ? '✅ COMPLETE' : '-',
-    shouldAutoExpand: shouldAutoExpand ? '📂 EXPANDED' : '📁 COLLAPSED',
-    thinkingStepsCount: thinkingSteps.length
-  });
 
   return (
     <div className="message-enter">
@@ -279,18 +267,9 @@ export const MessageItem = memo(function MessageItem({ message, isStreaming = fa
                   ) : (
                     <BrainIcon className="size-5" />
                   )}
-                  {isThinkingPhase && (() => {
-                    console.log(`[MessageItem] 🤔 Showing "Thinking..." animation`);
-                    return <span>Thinking...</span>;
-                  })()}
-                  {isGeneratingPhase && (() => {
-                    console.log(`[MessageItem] ✍️ Showing "Generating..." animation`);
-                    return <span>Generating...</span>;
-                  })()}
-                  {isComplete && (() => {
-                    console.log(`[MessageItem] ✅ Showing "Thought for a few seconds"`);
-                    return <span>Thought for a few seconds</span>;
-                  })()}
+                  {isThinkingPhase && <span>Thinking...</span>}
+                  {isGeneratingPhase && <span>Generating...</span>}
+                  {isComplete && <span>Thought for a few seconds</span>}
                   <ChevronDownIcon className="size-6 ml-auto transition-transform" />
                 </CollapsibleTrigger>
               <TaskContent className={cn(

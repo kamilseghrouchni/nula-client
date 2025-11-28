@@ -30,8 +30,6 @@ export async function createSyntheticTools(
       // Note: No additionalProperties for better Anthropic compatibility
     }),
     execute: async (args: { serverName?: string }) => {
-      console.log('[SyntheticTools] Executing mcp__list_resources');
-
       const sessionsToQuery = args.serverName
         ? { [args.serverName]: sessions[args.serverName] }
         : sessions;
@@ -69,8 +67,6 @@ export async function createSyntheticTools(
       required: ['serverName', 'uri']
     }),
     execute: async (args: { serverName: string; uri: string }) => {
-      console.log('[SyntheticTools] Executing mcp__read_resource:', args);
-
       const session = sessions[args.serverName];
       if (!session) {
         return JSON.stringify({
@@ -111,8 +107,6 @@ export async function createSyntheticTools(
       // Note: No additionalProperties for better Anthropic compatibility
     }),
     execute: async (args: { serverName?: string }) => {
-      console.log('[SyntheticTools] Executing mcp__list_prompts');
-
       const sessionsToQuery = args.serverName
         ? { [args.serverName]: sessions[args.serverName] }
         : sessions;
@@ -159,8 +153,6 @@ export async function createSyntheticTools(
       promptName: string;
       args?: Record<string, any>;
     }) => {
-      console.log('[SyntheticTools] Executing mcp__get_prompt:', args);
-
       const session = sessions[args.serverName];
       if (!session) {
         return JSON.stringify({
@@ -186,8 +178,6 @@ export async function createSyntheticTools(
       }
     }
   };
-
-  console.log('[SyntheticTools] Created 4 synthetic tools for MCP resources and prompts');
 
   return tools;
 }

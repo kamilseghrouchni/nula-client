@@ -21,10 +21,6 @@ export async function convertMCPToolsToAISDK(
       // Get all tools available from this MCP server's connector
       const mcpTools = session.connector.tools;
 
-      console.log(
-        `[ToolConverter] Found ${mcpTools.length} tools from server: ${serverName}`
-      );
-
       // SECURITY: Filter out forbidden tools before making them available to AI
       const FORBIDDEN_PATTERNS = [
         /^run_/i,           // Tools starting with 'run_' (e.g., run_python_code, run_analysis)
@@ -37,28 +33,12 @@ export async function convertMCPToolsToAISDK(
 
       const filteredTools = mcpTools.filter((tool) => {
         const isForbidden = FORBIDDEN_PATTERNS.some((pattern) => pattern.test(tool.name));
-
-        if (isForbidden) {
-          console.log(`[ToolConverter] 🚫 FILTERED FORBIDDEN TOOL: ${serverName}__${tool.name}`);
-          console.log(`[ToolConverter] Security: Prevented ${tool.name} from being available to AI`);
-          return false;
-        }
-
-        return true;
+        return !isForbidden;
       });
-
-      const filteredCount = mcpTools.length - filteredTools.length;
-      if (filteredCount > 0) {
-        console.log(`[ToolConverter] ⚠️  Filtered ${filteredCount} forbidden tools from ${serverName}`);
-      }
-      console.log(`[ToolConverter] Available tools after filtering: ${filteredTools.length}`);
 
       for (const mcpTool of filteredTools) {
         // Create namespaced tool name to avoid conflicts between servers
         const toolName = `${serverName}__${mcpTool.name}`;
-
-        // DEBUG: Log the original schema received from MCP server
-        console.log(`[ToolConverter] 🔍 Tool ${toolName} original schema:`, JSON.stringify(mcpTool.inputSchema, null, 2));
 
         // For Sleepyrat tools: Remove 'token' parameter from schema since auth is via headers
         // Per MCP spec, authentication MUST be via Authorization header, not tool parameters
@@ -144,9 +124,6 @@ export async function convertMCPToolsToAISDK(
            */
           execute: async (args) => {
             try {
-              // DEBUG: Log the arguments Claude is passing
-              console.log(`[ToolConverter] 🔍 Executing ${toolName} with args from Claude:`, JSON.stringify(args, null, 2));
-
               // TRANSFORM: Convert camelCase to snake_case for Python MCP servers
               // NOTE: With FastMCP proxy mounting (gateway.py refactor), backend servers
               // now expose their actual snake_case schemas. This transformation should
@@ -155,14 +132,9 @@ export async function convertMCPToolsToAISDK(
               const transformedArgs = Object.fromEntries(
                 Object.entries(args).map(([key, value]) => {
                   const snakeCase = key.replace(/([A-Z])/g, '_$1').toLowerCase();
-                  if (snakeCase !== key) {
-                    console.log(`[ToolConverter] 🔄 Parameter transformation: ${key} → ${snakeCase}`);
-                  }
                   return [snakeCase, value];
                 })
               );
-
-              console.log(`[ToolConverter] 🔍 Transformed args for MCP server:`, JSON.stringify(transformedArgs, null, 2));
 
               // For Sleepyrat: Extract token from Authorization header and inject as parameter
               // The API still expects the token parameter even though we send the header
@@ -186,11 +158,6 @@ export async function convertMCPToolsToAISDK(
               const errorMessage = error instanceof Error ? error.message : 'Unknown error';
               console.error(`[ToolConverter] Error executing ${toolName}:`, errorMessage);
 
-              // For Sleepyrat auth errors, provide more context
-              if (serverName === 'sleepyrat' && errorMessage.includes('segments')) {
-                console.error('[ToolConverter] JWT parsing error detected - token may be malformed or missing');
-              }
-
               // Return error as string so AI can see what went wrong
               return JSON.stringify({
                 error: errorMessage,
@@ -206,8 +173,6 @@ export async function convertMCPToolsToAISDK(
       // Continue with other servers even if one fails
     }
   }
-
-  console.log(`[ToolConverter] Total tools converted: ${Object.keys(tools).length}`);
 
   return tools;
 }
@@ -259,7 +224,6 @@ export function parseToolName(namespacedTool: string): { serverName: string; too
   const parts = namespacedTool.split('__');
 
   if (parts.length !== 2) {
-    console.warn(`[ToolConverter] Invalid namespaced tool name: ${namespacedTool}`);
     return null;
   }
 

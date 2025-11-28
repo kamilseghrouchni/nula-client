@@ -106,44 +106,61 @@ http://localhost:3000
 
 ## What is NulaLabs?
 
-An AI-powered lab notebook that gives you conversational access to 230+ biotech research tools.
+An AI-powered lab notebook built on top of the amazing [BioContextAI Registry](https://biocontext.ai/registry).
 
-**The lab notebook includes**:
+**Core Features**:
 - 📊 **Interactive visualizations** - Generate and save publication-ready charts
 - 🔬 **Workflow tracking** - Auto-generated audit trail of your analysis
 - 📚 **Gallery view** - All results organized and downloadable
 - 🤖 **AI-guided analysis** - Strategic plans for complex multi-step workflows
 
-**The difference**: Other approaches require manually configuring each MCP server. NulaLabs connects to all 27+ BioContext Registry servers automatically.
+**Built on excellence**: Leverages 230+ tools from the BioContextAI ecosystem, combining them with local control and lab notebook features.
 
-**Powered by**: 230+ tools from [BioContextAI Registry](https://biocontext.ai/registry) • Claude Sonnet 4.5 • Runs locally
+**Powered by**: [BioContextAI Registry](https://biocontext.ai/registry) • Claude Sonnet 4.5 • [mcp-use](https://github.com/mcp-use/mcp-use) • Runs locally
 
 ---
 
-## NulaLabs vs Other Options
+## Building on Top of Great Work
 
-| | BioContext Chat | Manual Registry | NulaLabs |
-|---|---|---|---|
-| **Setup** | None | Configure each server | One Docker command |
-| **Tools** | 8 (1 server) | Pick individually | 230+ (27+ servers) |
-| **Model** | Rate-limited | Your choice | Claude Sonnet 4.5 |
-| **Interface** | Web only | Depends on client | AI-powered lab notebook |
+NulaLabs builds on the excellent foundation provided by [BioContextAI](https://biocontext.ai) and the broader MCP ecosystem.
 
-### Why Not Just Use BioContext Chat?
+### BioContextAI: The Foundation
 
-BioContextAI Chat is limited to a single server with 8 tools and doesn't have access to the full registry:
+**[BioContextAI](https://biocontext.ai)** created an incredible registry of 27+ biotech MCP servers with 1045+ tools. Their work makes biotech research accessible through AI. We're grateful for their pioneering efforts in bringing MCP to biomedical research.
 
 <div align="center">
-  <img src="./public/biocontext/biocontext_registry.png" alt="BioContext Chat Limitation" width="700"/>
+  <img src="./public/biocontext/biocontext.png" alt="BioContext Registry - 27 Auto-Install Servers" width="700"/>
 </div>
 
-**The limitation:** BioContextAI Chat can't access all MCPs in the registry - it's restricted to their hosted server.
+### What NulaLabs Adds
 
-**NulaLabs difference:**
-- ✅ Direct access to ALL 27 auto-install servers
-- ✅ 230+ tools instead of 8
-- ✅ Your own Claude API (no rate limits)
-- ✅ Full lab notebook features
+While **BioContext Chat** provides instant access (no setup required), NulaLabs extends this foundation with:
+
+**Lab Notebook Features:**
+- 📊 Interactive workflow visualization with auto-generated audit trails
+- 📚 Artifact gallery - save and download all visualizations
+- 🧠 Strategic planning system with step-by-step execution
+- 📈 Publication-ready charts with consistent styling
+
+**Local Control:**
+- 🔑 Your own Claude API key (no rate limits)
+- 💾 Local data storage and processing
+- ⚙️ Full access to all 27 registry servers simultaneously
+- 🐳 Docker-based deployment for reproducibility
+
+**Perfect for:**
+- Researchers who need local data control
+- Teams building reproducible analysis pipelines
+- Labs requiring comprehensive audit trails
+- Anyone wanting the full power of the registry locally
+
+| Feature | BioContext Chat | NulaLabs |
+|---|---|---|
+| **Setup** | None (instant) | One Docker command |
+| **Tools** | 8 tools (curated) | 230+ tools (full registry) |
+| **Model** | Shared (rate-limited) | Your Claude API |
+| **Interface** | Web chat | AI-powered lab notebook |
+| **Best For** | Quick queries | Research workflows |
 
 ---
 

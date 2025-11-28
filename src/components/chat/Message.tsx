@@ -33,7 +33,6 @@ export function Message({ role, parts }: MessageProps) {
         
         <div className="space-y-2">
           {parts.map((part, idx) => {
-            console.log('[Message] Rendering part:', part);
             if (part.type === 'text') {
               return <TextContent key={idx} text={part.text} />;
             }

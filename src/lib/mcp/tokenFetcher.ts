@@ -5,10 +5,6 @@ export async function fetchSleepyratToken(): Promise<string> {
   // Check if token is already in environment
   const envToken = process.env.SLEEPYRAT_TOKEN;
   if (envToken) {
-    console.log('[Sleepyrat] Using token from environment variable');
-    // Validate token format
-    const parts = envToken.split('.');
-    console.log(`[Sleepyrat] Env token format: ${parts.length} parts, ${envToken.length} chars`);
     return envToken;
   }
 
@@ -44,15 +40,7 @@ export async function fetchSleepyratToken(): Promise<string> {
       throw new Error('No access_token in response');
     }
 
-    // Validate fetched token format
     const token = data.access_token;
-    const parts = token.split('.');
-    console.log(`[Sleepyrat] Token fetched successfully: ${parts.length} parts, ${token.length} chars`);
-
-    if (parts.length !== 3) {
-      console.warn(`[Sleepyrat] WARNING: Token has ${parts.length} parts (expected 3 for JWT)`);
-    }
-
     return token;
   } catch (error) {
     console.error('[Sleepyrat] Failed to fetch token:', error);

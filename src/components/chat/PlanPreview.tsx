@@ -44,9 +44,6 @@ export function PlanPreview({
   const handleClear = () => {
     if (onClear) {
       onClear();
-    } else {
-      // Default: just log it
-      console.log('[PlanPreview] Clear clicked');
     }
   };
 
@@ -58,7 +55,6 @@ export function PlanPreview({
       // Check for Cmd+Enter (Mac) or Ctrl+Enter (Windows/Linux)
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
         e.preventDefault();
-        console.log('[PlanPreview] Cmd+Enter triggered');
         handleBuild();
       }
     };

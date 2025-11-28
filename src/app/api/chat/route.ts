@@ -28,23 +28,9 @@ export async function POST(request: Request) {
     const model = anthropic(modelId);
 
     // Get MCP client and convert tools to AI SDK format
-    console.log('[MCP Initialization] 🔌 Starting MCP client connection...');
-    const mcpStartTime = Date.now();
     const mcpClient = await getMCPClient();
-    const mcpConnectTime = Date.now() - mcpStartTime;
-    console.log(`[MCP Initialization] ✅ MCP client connected in ${mcpConnectTime}ms`);
-
-    console.log('[MCP Initialization] 🔧 Fetching active sessions...');
     const sessions = mcpClient.getAllActiveSessions();
-    const serverNames = Object.keys(sessions);
-    console.log(`[MCP Initialization] 📊 Found ${serverNames.length} active session(s):`, serverNames.join(', '));
-
-    console.log('[MCP Initialization] 🛠️ Getting Code Mode tools...');
-    const toolsStartTime = Date.now();
     const tools = await getCodeModeTools(mcpClient);
-    const toolsConvertTime = Date.now() - toolsStartTime;
-    console.log(`[MCP Initialization] ✅ Code Mode tools ready in ${toolsConvertTime}ms`);
-    console.log(`[MCP Initialization] 🎉 TOTAL: ${Object.keys(tools).length} Code Mode tools available (execute_code, search_tools)`);
 
     // List available prompts for context
     const promptsList = await listAllPrompts(sessions);
@@ -128,48 +114,29 @@ ${contextPrompt ? '\n\nREMINDER: Check the "Session Data Context" section above 
           100
         );
 
-        console.log('[Streaming] 🚀 Starting AI stream with model:', modelId);
-        console.log('[Streaming] 📝 Context:', {
-          messagesCount: messagesWithCaching.length,
-          toolsCount: Object.keys(tools).length,
-          hasCaching: true,
-          maxSteps
-        });
-
-        const streamStartTime = Date.now();
-
         const result = streamText({
           model, // Use dynamically selected model
           messages: messagesWithCaching,
           tools,
           stopWhen: stepCountIs(maxSteps),
 
-          onFinish: async ({ usage }) => {
-            const streamDuration = Date.now() - streamStartTime;
-            console.log(`[Streaming] ✅ Stream completed in ${streamDuration}ms`, {
-              usage: usage || 'not available'
-            });
-          },
-
           // Track steps and extract plans
           onStepFinish: async (step) => {
             stepCount++;
-            console.log(`[Streaming] 📊 Step ${stepCount} finished:`, {
-              hasText: !!step.text,
-              textLength: step.text?.length || 0,
-              hasToolCalls: !!step.toolCalls,
-              toolCallsCount: step.toolCalls?.length || 0,
-              toolNames: step.toolCalls?.map(tc => tc.toolName) || []
-            });
 
             // Extract and cache plans from reasoning text
             if (step.text) {
               const planText = extractPlanFromText(step.text);
               if (planText) {
                 // Get user query from last message
-                const userQuery = processedMessages.length > 0
-                  ? (processedMessages[processedMessages.length - 1] as any).content || ''
-                  : '';
+                let userQuery = '';
+                if (processedMessages.length > 0) {
+                  const lastMsg = processedMessages[processedMessages.length - 1];
+                  if (lastMsg.role === 'user' && lastMsg.parts && lastMsg.parts.length > 0) {
+                    const textPart = lastMsg.parts.find((p): p is typeof p & { type: 'text' } => p.type === 'text');
+                    userQuery = textPart?.text || '';
+                  }
+                }
 
                 // Get tools used in this step
                 const toolsUsed = step.toolCalls?.map(tc => tc.toolName) || [];
@@ -195,12 +162,10 @@ ${contextPrompt ? '\n\nREMINDER: Check the "Session Data Context" section above 
 
     return createUIMessageStreamResponse({ stream });
 
-  } catch (error: any) {
-    console.error('\n[ERROR]:', error.message);
-    console.error('[STACK]:', error.stack);
-
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "An error occurred";
     return new Response(JSON.stringify({
-      error: error.message || "An error occurred"
+      error: errorMessage
     }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },

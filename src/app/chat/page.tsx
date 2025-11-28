@@ -1,6 +1,7 @@
 'use client';
 
 import { useChat } from '@ai-sdk/react';
+import type { UIMessage } from '@ai-sdk/react';
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { MessageItem } from '@/components/chat/MessageItem';
 import {
@@ -17,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { RightPanel } from '@/components/RightPanel';
 import { HiddenArtifactPool } from '@/components/artifact/HiddenArtifactPool';
 import { buildWorkflowGraph } from '@/lib/workflow/workflowBuilder';
+import type { WorkflowNode, WorkflowEdge } from '@/lib/types/workflow';
 import dynamic from 'next/dynamic';
 
 // Dynamic import to avoid SSR issues with Three.js
@@ -30,17 +32,9 @@ export default function ChatPage() {
 
   const { messages, sendMessage, status, error } = useChat();
 
-  // Debug: Track status changes
-  useEffect(() => {
-    console.log(`[Chat Status] 🔄 Status changed to: "${status}"`, {
-      timestamp: new Date().toISOString(),
-      messageCount: messages.length,
-      lastMessageRole: messages.length > 0 ? messages[messages.length - 1].role : 'none'
-    });
-  }, [status, messages.length]);
 
   // Ref to store the last complete workflow graph (preserves during streaming)
-  const lastCompleteWorkflowRef = useRef<{ nodes: any[]; edges: any[] }>({ nodes: [], edges: [] });
+  const lastCompleteWorkflowRef = useRef<{ nodes: WorkflowNode[]; edges: WorkflowEdge[] }>({ nodes: [], edges: [] });
 
   // State to hold node insights extracted via LLM (nodeId -> insight)
   const [nodeInsights, setNodeInsights] = useState<Record<string, string>>({});
@@ -55,8 +49,8 @@ export default function ChatPage() {
       if (lastMessage.role === 'assistant' && lastMessage.parts) {
         // Get all text parts and combine them
         const textParts = lastMessage.parts
-          .filter((part: any) => part.type === 'text')
-          .map((part: any) => part.text || '')
+          .filter((part): part is UIMessage['parts'][number] & { type: 'text' } => part.type === 'text')
+          .map((part) => part.text || '')
           .join('\n');
 
         // Extract follow-up question
@@ -80,7 +74,7 @@ export default function ChatPage() {
   );
 
   const artifacts = useMemo(() => {
-    const allArtifacts: any[] = [];
+    const allArtifacts: Array<{ id: string; code: string; createdAt: number; messageId: string }> = [];
     let artifactCounter = 0; // Global counter to ensure unique IDs
 
     // Regex for code blocks in markdown
@@ -91,34 +85,36 @@ export default function ChatPage() {
 
     messages.forEach((message) => {
       if (message.role === 'assistant' && message.parts) {
-        message.parts.forEach((part: any, partIdx: number) => {
+        message.parts.forEach((part, partIdx: number) => {
           if (part.type === 'text') {
             const text = part.text || '';
 
             // Extract from markdown code blocks
             const codeBlockMatches = Array.from(text.matchAll(jsxCodeBlockRegex));
-            codeBlockMatches.forEach((match: any, idx: number) => {
+            codeBlockMatches.forEach((match, idx: number) => {
               allArtifacts.push({
                 id: `artifact-${message.id}-p${partIdx}-cb${idx}-${artifactCounter++}`,
                 code: match[1].trim(),
                 createdAt: 0,
+                messageId: message.id,
               });
             });
 
             // Extract from artifact tags
             const artifactTagMatches = Array.from(text.matchAll(artifactTagRegex));
-            artifactTagMatches.forEach((match: any, idx: number) => {
+            artifactTagMatches.forEach((match, idx: number) => {
               // Content inside <artifact> tags should be JSX code
               const artifactContent = match[1].trim();
               // Check if it contains code blocks, extract them
               const innerCodeMatches = Array.from(artifactContent.matchAll(jsxCodeBlockRegex));
 
               if (innerCodeMatches.length > 0) {
-                innerCodeMatches.forEach((innerMatch: any, innerIdx: number) => {
+                innerCodeMatches.forEach((innerMatch, innerIdx: number) => {
                   allArtifacts.push({
                     id: `artifact-${message.id}-p${partIdx}-tag${idx}-${innerIdx}-${artifactCounter++}`,
                     code: innerMatch[1].trim(),
                     createdAt: 0,
+                    messageId: message.id,
                   });
                 });
               } else {
@@ -127,6 +123,7 @@ export default function ChatPage() {
                   id: `artifact-${message.id}-p${partIdx}-tag${idx}-${artifactCounter++}`,
                   code: artifactContent,
                   createdAt: 0,
+                  messageId: message.id,
                 });
               }
             });
@@ -147,14 +144,11 @@ export default function ChatPage() {
     e.preventDefault();
 
     if (status !== 'ready') {
-      console.log(`[Chat Submit] ⚠️ Blocked - status is "${status}", not "ready"`);
       return;
     }
 
     // If input has text, send it
     if (input.trim()) {
-      console.log(`[Chat Submit] 📤 Sending message: "${input.substring(0, 50)}..."`);
-      console.log(`[Chat Submit] ⏱️ Start time:`, new Date().toISOString());
       sendMessage({ text: input });
       setInput('');
       setSuggestedFollowup(null); // Clear suggestion after sending
@@ -557,19 +551,10 @@ export default function ChatPage() {
                 // FIX: Show indicator during streaming OR when there's no assistant message yet
                 const isActivelyStreaming = status === 'submitted' || status === 'streaming';
                 const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
-                const hasAssistantResponse = messages.some(m => m.role === 'assistant' && (m.parts?.length > 0 || (m as any).content));
+                const hasAssistantResponse = messages.some(m => m.role === 'assistant' && (m.parts?.length > 0));
 
                 // Show if: streaming AND (no assistant message yet OR last message is from user)
                 const showIndicator = isActivelyStreaming && (!hasAssistantResponse || lastMessage?.role === 'user');
-
-                console.log(`[Loading Indicator] 🔍 Check:`, {
-                  status,
-                  isActivelyStreaming,
-                  hasAssistantResponse,
-                  lastMessageRole: lastMessage?.role,
-                  showIndicator: showIndicator ? '✅ SHOWING' : '❌ HIDDEN',
-                  messageCount: messages.length
-                });
 
                 return showIndicator;
               })() && (

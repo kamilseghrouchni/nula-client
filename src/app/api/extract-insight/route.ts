@@ -25,10 +25,11 @@ export async function POST(request: Request) {
     const insight = await extractInsightFromResponse(responseText, phase);
 
     return NextResponse.json({ insight });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[Extract Insight Error]:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to extract insight';
     return NextResponse.json(
-      { error: error.message || 'Failed to extract insight' },
+      { error: errorMessage },
       { status: 500 }
     );
   }

@@ -44,8 +44,6 @@ export async function listAllResources(
 
   for (const [serverName, session] of Object.entries(sessions)) {
     try {
-      console.log(`[ResourceManager] Listing resources from server: ${serverName}`);
-
       // List resources from this server
       const result = await session.connector.listResources();
 
@@ -64,8 +62,6 @@ export async function listAllResources(
           mimeType: resource.mimeType
         });
       }
-
-      console.log(`[ResourceManager] Found ${result.resources.length} resources from ${serverName}`);
     } catch (error) {
       console.error(`[ResourceManager] Failed to list resources from ${serverName}:`, error);
       // Continue with other servers
@@ -91,8 +87,6 @@ export async function readResource(
   uri: string,
   maxSize: number = 50000
 ): Promise<{ content: string; mimeType?: string }> {
-  console.log(`[ResourceManager] Reading resource: ${uri}`);
-
   const result = await session.connector.readResource(uri);
 
   // Combine all content parts
@@ -185,7 +179,6 @@ export async function fetchResourcesWithVisibility(
     const session = sessions[serverName];
 
     if (!session) {
-      console.warn(`[ResourceManager] Server ${serverName} not found`);
       continue;
     }
 
@@ -209,11 +202,8 @@ export async function fetchResourcesWithVisibility(
         content
       );
       parts.push(completePart);
-
-      console.log(`[ResourceManager] ✅ Fetched resource: ${uri} (${content.length} chars)`);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`[ResourceManager] ❌ Failed to fetch resource ${uri}:`, errorMessage);
 
       // Create error part
       const errorPart = createResourceFetchPart(

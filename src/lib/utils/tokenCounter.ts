@@ -121,12 +121,5 @@ export function shouldSummarize(
   tools: any
 ): boolean {
   const contextSize = calculateContextSize(systemPrompt, messages, tools);
-
-  console.log('[Token Counter]', {
-    totalTokens: contextSize.totalTokens,
-    threshold: TOKEN_THRESHOLDS.SUMMARIZATION_TRIGGER,
-    shouldSummarize: contextSize.exceedsThreshold,
-  });
-
   return contextSize.exceedsThreshold;
 }
