@@ -192,7 +192,22 @@ export async function executeCodeWithMCP(client: MCPClient, code: string) {
           console.log(`[TOOL CALL] ${normalizedToolName}`, args);
 
           try {
-            const result = await session.connector.callTool(tool.name, args || {});
+            // AUTO-INJECT AUTH TOKENS FOR SERVERS THAT NEED THEM
+            let enhancedArgs = args || {};
+
+            // Check if this is a sleepyrat tool that requires token parameter
+            if (serverName === 'sleepyrat' && tool.inputSchema?.properties?.token) {
+              // Auto-inject token if not provided
+              if (!enhancedArgs.token && process.env.SLEEPYRAT_TOKEN) {
+                console.log(`[AUTH] Auto-injecting SLEEPYRAT_TOKEN for ${normalizedToolName}`);
+                enhancedArgs = {
+                  ...enhancedArgs,
+                  token: process.env.SLEEPYRAT_TOKEN
+                };
+              }
+            }
+
+            const result = await session.connector.callTool(tool.name, enhancedArgs);
 
             console.log(`[TOOL RESPONSE] ${normalizedToolName}:`, {
               hasContent: !!result.content,

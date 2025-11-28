@@ -1,7 +1,6 @@
 import { MCPClient } from 'mcp-use';
 import path from 'path';
 import fs from 'fs';
-import { fetchSleepyratToken } from './tokenFetcher';
 
 /**
  * Singleton MCP client instance
@@ -27,48 +26,37 @@ export async function getMCPClient(): Promise<MCPClient> {
     // Load config from project root
     const configPath = path.join(process.cwd(), 'mcp-config.json');
     const configContent = fs.readFileSync(configPath, 'utf-8');
-    const config = JSON.parse(configContent);
 
-    // If Sleepyrat server exists, inject runtime auth token
-    if (config.mcpServers && config.mcpServers.sleepyrat) {
-      console.log('[MCPClient] Fetching Sleepyrat authentication token...');
+    console.log('[MCPClient] Config loaded, checking for environment variables...');
 
-      try {
-        const sleepyratToken = await fetchSleepyratToken();
-
-        // Validate token format (should be a JWT with 3 parts separated by dots)
-        const tokenParts = sleepyratToken.split('.');
-        if (tokenParts.length !== 3) {
-          throw new Error(`Invalid JWT format: expected 3 parts, got ${tokenParts.length}`);
+    // Replace ALL environment variables BEFORE parsing (${VAR_NAME} → actual value)
+    const replacedContent = configContent.replace(
+      /\$\{(\w+)\}/g,
+      (match, envVar) => {
+        const value = process.env[envVar];
+        if (value) {
+          console.log(`[MCPClient] Replacing ${match} with environment variable (${value.substring(0, 20)}...)`);
+          return value;
+        } else {
+          console.warn(`[MCPClient] Environment variable ${envVar} not found, leaving ${match} as-is`);
+          return match;
         }
-
-        // Log token info for debugging (first 20 chars only for security)
-        console.log('[MCPClient] Token format validated:', {
-          prefix: sleepyratToken.substring(0, 20) + '...',
-          parts: tokenParts.length,
-          totalLength: sleepyratToken.length
-        });
-
-        // Transform to HTTP config with runtime token
-        config.mcpServers.sleepyrat = {
-          url: 'https://sleepyrat.ai/api/mcp-tools',
-          authToken: sleepyratToken,  // mcp-use converts to Authorization: Bearer header
-          transport: 'http'
-        };
-
-        console.log('[MCPClient] Sleepyrat token injected successfully');
-      } catch (tokenError) {
-        console.error('[MCPClient] Failed to fetch/inject Sleepyrat token:', tokenError);
-        // Remove sleepyrat from config if token fetch fails (graceful degradation)
-        delete config.mcpServers.sleepyrat;
-        console.warn('[MCPClient] Continuing without Sleepyrat server');
       }
-    }
+    );
 
-    // Create client from modified config
+    // Parse config with replaced env vars
+    const config = JSON.parse(replacedContent);
+
+    console.log('[MCPClient] Configuration parsed:', {
+      servers: Object.keys(config.mcpServers || {}),
+      count: Object.keys(config.mcpServers || {}).length
+    });
+
+    // Create client from config
     mcpClient = MCPClient.fromDict(config);
 
     // Create sessions with all configured servers
+    console.log('[MCPClient] Creating sessions with all servers...');
     await mcpClient.createAllSessions();
 
     console.log('[MCPClient] Successfully initialized with all servers');

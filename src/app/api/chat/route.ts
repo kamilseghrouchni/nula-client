@@ -122,11 +122,18 @@ ${contextPrompt ? '\n\nREMINDER: Check the "Session Data Context" section above 
         }
 
 
+        // Get max steps from environment variable with validation
+        const maxSteps = Math.min(
+          Math.max(parseInt(process.env.MAX_AI_STEPS || '25', 10), 1),
+          100
+        );
+
         console.log('[Streaming] 🚀 Starting AI stream with model:', modelId);
         console.log('[Streaming] 📝 Context:', {
           messagesCount: messagesWithCaching.length,
           toolsCount: Object.keys(tools).length,
-          hasCaching: true
+          hasCaching: true,
+          maxSteps
         });
 
         const streamStartTime = Date.now();
@@ -135,7 +142,7 @@ ${contextPrompt ? '\n\nREMINDER: Check the "Session Data Context" section above 
           model, // Use dynamically selected model
           messages: messagesWithCaching,
           tools,
-          stopWhen: stepCountIs(25),
+          stopWhen: stepCountIs(maxSteps),
 
           onFinish: async ({ usage }) => {
             const streamDuration = Date.now() - streamStartTime;
