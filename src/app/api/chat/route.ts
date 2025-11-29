@@ -8,8 +8,7 @@ import {
   createUIMessageStreamResponse
 } from 'ai';
 import { getMCPClient } from '@/lib/mcp/mcpClient';
-import { convertMCPToolsToAISDK } from '@/lib/mcp/toolConverter';
-import { createSyntheticTools } from '@/lib/mcp/syntheticTools';
+import { getCodeModeTools } from '@/lib/mcp/codeModeToolConverter';
 import { listAllPrompts, formatPromptsForDisplay } from '@/lib/mcp/promptManager';
 import { SYSTEM_PROMPT } from '@/lib/prompts/system';
 import { buildDataContext, formatContextForPrompt } from '@/lib/context/dataContext';
@@ -24,56 +23,26 @@ export async function POST(request: Request) {
     const json = await request.json();
     const { messages } = json as { messages: UIMessage[] };
 
+    // Use Anthropic Claude Sonnet 4.5 (configurable via env)
+    const modelId = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5';
+    const model = anthropic(modelId);
+
     // Get MCP client and convert tools to AI SDK format
     const mcpClient = await getMCPClient();
     const sessions = mcpClient.getAllActiveSessions();
-    const tools = await convertMCPToolsToAISDK(sessions);
-    console.log('[Chat/DEBUG] 📦 Loaded tools from all servers:', Object.keys(tools).length);
-
-    // Debug: Log Sleepyrat tool schemas
-    const sleepyratTools = Object.entries(tools).filter(([name]) => name.startsWith('sleepyrat__'));
-    console.log('[Chat/DEBUG] Sleepyrat tools count:', sleepyratTools.length);
-    if (sleepyratTools.length > 0) {
-      const firstTool = sleepyratTools[0];
-      console.log('[Chat/DEBUG] Sample Sleepyrat tool:', firstTool[0]);
-      console.log('[Chat/DEBUG] Sample schema:', JSON.stringify(firstTool[1].inputSchema));
-    }
-
-    // Add synthetic tools for MCP resources and prompts
-    const syntheticTools = await createSyntheticTools(sessions);
-    Object.assign(tools, syntheticTools);
-    console.log('[Chat] 🔧 Added', Object.keys(syntheticTools).length, 'synthetic tools for MCP resources/prompts');
+    const tools = await getCodeModeTools(mcpClient);
 
     // List available prompts for context
     const promptsList = await listAllPrompts(sessions);
     const promptsContext = promptsList.totalCount > 0
       ? formatPromptsForDisplay(promptsList.prompts)
       : '';
-    console.log('[Chat] 📝 Found', promptsList.totalCount, 'prompts from MCP servers');
 
     let stepCount = 0;
 
     // Build data context from message history
     const dataContext = buildDataContext(messages);
     const contextPrompt = formatContextForPrompt(dataContext);
-
-    console.log('[Context] Tool calls in history:', dataContext.toolCalls.length);
-    console.log('[Context] Loaded datasets:', dataContext.loadedDatasets);
-
-    // Debug: Check if context is being built correctly
-    if (messages.length > 1) {
-      console.log('[Context] Sample message parts:', messages.slice(-2).map(m => ({
-        role: m.role,
-        partTypes: m.parts?.map((p: any) => p.type) || []
-      })));
-    }
-
-    // Log context prompt if it exists
-    if (contextPrompt) {
-      console.log('[Context] Injecting context into prompt (length:', contextPrompt.length, 'chars)');
-    } else {
-      console.log('[Context] No context to inject (first message or no tools called yet)');
-    }
 
     // Create UI message stream with tool call support
     const stream = createUIMessageStream({
@@ -104,28 +73,15 @@ ${contextPrompt ? '\n\nREMINDER: Check the "Session Data Context" section above 
         let processedMessages = messages;
 
         if (needsSummarization) {
-          console.log('[Summarization] Token threshold exceeded, summarizing older messages...');
-
           const { summaryText, recentMessages, summarizedCount } = await summarizeOlderMessages(messages);
-
-          console.log('[Summarization] Complete:', {
-            summarizedCount,
-            recentCount: recentMessages.length,
-            summaryLength: summaryText.length,
-          });
 
           // Create synthetic summary message and prepend to recent messages
           const summaryMessage = createSummaryMessage(summaryText);
           processedMessages = [summaryMessage, ...recentMessages];
-
-          console.log(`[Summarization] Final message count: ${processedMessages.length} (was ${messages.length})`);
-        } else {
-          console.log('[Summarization] Not needed, context within limits');
         }
 
         // Calculate final context size
         const finalContextSize = calculateContextSize(systemPrompt, processedMessages, tools);
-        console.log('[Token Management] Final context:', finalContextSize);
 
         // Convert processed messages to model format
         const modelMessages = convertToModelMessages(processedMessages);
@@ -151,89 +107,36 @@ ${contextPrompt ? '\n\nREMINDER: Check the "Session Data Context" section above 
           };
         }
 
-        // CRITICAL DEBUG: Write ALL tool schemas to file for inspection
-        const fs = await import('fs/promises');
-        const toolSchemas = Object.entries(tools).map(([name, tool]) => ({
-          name,
-          schema: tool.inputSchema
-        }));
-        await fs.writeFile(
-          '/tmp/tool_schemas_debug.json',
-          JSON.stringify(toolSchemas, null, 2)
-        );
-        console.log('[Chat/CRITICAL] 📝 Written', toolSchemas.length, 'tool schemas to /tmp/tool_schemas_debug.json');
 
-        // DEBUG: Log the messages being sent to Anthropic
-        console.log('[Chat/DEBUG] 📤 Messages being sent to Anthropic:');
-        await fs.writeFile(
-          '/tmp/messages_debug.json',
-          JSON.stringify(messagesWithCaching, null, 2)
+        // Get max steps from environment variable with validation
+        const maxSteps = Math.min(
+          Math.max(parseInt(process.env.MAX_AI_STEPS || '25', 10), 1),
+          100
         );
-        console.log('[Chat/DEBUG] 📝 Written messages to /tmp/messages_debug.json');
 
         const result = streamText({
-          model: anthropic('claude-haiku-4-5'),
+          model, // Use dynamically selected model
           messages: messagesWithCaching,
           tools,
-          stopWhen: stepCountIs(25),
-
-          // Log cache performance
-          onFinish: async ({ usage }) => {
-            if (usage) {
-              console.log('[Cache Performance]', {
-                inputTokens: usage.inputTokens,
-                outputTokens: usage.outputTokens,
-              });
-
-              // Log full usage object to see cache metrics (includes Anthropic-specific cache data)
-              console.log('[Full Usage]', JSON.stringify(usage, null, 2));
-            }
-          },
+          stopWhen: stepCountIs(maxSteps),
 
           // Track steps and extract plans
           onStepFinish: async (step) => {
             stepCount++;
-            console.log(`[Step ${stepCount}] ${step.finishReason}`, {
-              toolCalls: step.toolCalls?.length || 0,
-              toolResults: step.toolResults?.length || 0,
-              hasText: !!step.text
-            });
-
-            // Extract and log workflow metadata from reasoning
-            if (step.text) {
-              const workflowMatch = step.text.match(/\[WORKFLOW:\s*type="(parallel|sequential)"(?:\s+phase="([^"]+)")?\]/i);
-              if (workflowMatch) {
-                console.log('[Workflow Metadata]', {
-                  type: workflowMatch[1],
-                  phase: workflowMatch[2] || 'unspecified',
-                  stepNumber: stepCount,
-                });
-              }
-            }
-
-            // Log tool errors for debugging
-            if (step.toolResults) {
-              for (const result of step.toolResults) {
-                if ((result as any).error || (result as any).isError) {
-                  const failedToolCall = step.toolCalls?.find((tc: any) => tc.toolCallId === (result as any).toolCallId) as any;
-                  console.error('[Tool Error]', {
-                    toolCallId: (result as any).toolCallId,
-                    toolName: failedToolCall?.toolName || 'unknown',
-                    error: (result as any).error || 'Unknown error',
-                    args: failedToolCall?.args || {}
-                  });
-                }
-              }
-            }
 
             // Extract and cache plans from reasoning text
             if (step.text) {
               const planText = extractPlanFromText(step.text);
               if (planText) {
                 // Get user query from last message
-                const userQuery = processedMessages.length > 0
-                  ? (processedMessages[processedMessages.length - 1] as any).content || ''
-                  : '';
+                let userQuery = '';
+                if (processedMessages.length > 0) {
+                  const lastMsg = processedMessages[processedMessages.length - 1];
+                  if (lastMsg.role === 'user' && lastMsg.parts && lastMsg.parts.length > 0) {
+                    const textPart = lastMsg.parts.find((p): p is typeof p & { type: 'text' } => p.type === 'text');
+                    userQuery = textPart?.text || '';
+                  }
+                }
 
                 // Get tools used in this step
                 const toolsUsed = step.toolCalls?.map(tc => tc.toolName) || [];
@@ -247,7 +150,6 @@ ${contextPrompt ? '\n\nREMINDER: Check the "Session Data Context" section above 
                 );
 
                 savePlan(plan);
-                console.log('[Plan Cache] Extracted and saved plan from step');
               }
             }
           },
@@ -260,12 +162,10 @@ ${contextPrompt ? '\n\nREMINDER: Check the "Session Data Context" section above 
 
     return createUIMessageStreamResponse({ stream });
 
-  } catch (error: any) {
-    console.error('\n[ERROR]:', error.message);
-    console.error('[STACK]:', error.stack);
-
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "An error occurred";
     return new Response(JSON.stringify({
-      error: error.message || "An error occurred"
+      error: errorMessage
     }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },

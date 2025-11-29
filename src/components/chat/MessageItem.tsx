@@ -224,24 +224,30 @@ export const MessageItem = memo(function MessageItem({ message, isStreaming = fa
 
   const hasThinkingActivity = thinkingSteps.length > 0;
 
-  // DEBUG: Log the state to understand what's happening
-  console.log('[MessageItem/DEBUG]', {
-    messageId: message.id,
-    isStreaming,
-    hasThinkingActivity,
-    thinkingStepsCount: thinkingSteps.length,
-    finalTextLength: finalText?.length || 0,
-    partsCount: message.parts?.length || 0,
-    partTypes: message.parts?.map((p: any) => p.type) || []
-  });
+  // Check if there are any tools currently in progress or just called
+  const hasActiveTools = useMemo(() => {
+    return thinkingSteps.some(step => {
+      if (step.type === 'tool') {
+        const tool = step.content;
+        const normalized = tool._normalized;
+        // Check for in-progress tools (partial state) or tools without results yet
+        return normalized.state === 'partial' || !normalized.result;
+      }
+      return false;
+    });
+  }, [thinkingSteps]);
 
   // Determine phase: thinking vs generating vs complete
-  // isThinkingPhase: Still executing tools, no response text yet → show "Thinking..."
+  // isThinkingPhase: Still executing tools OR tools in progress → show "Thinking..."
   // isGeneratingPhase: Tools done, response text coming in → show "Generating..."
   // isComplete: Everything done → show "Thought for X seconds" and final text
-  const isThinkingPhase = isStreaming && hasThinkingActivity && !finalText;
-  const isGeneratingPhase = isStreaming && finalText && hasThinkingActivity;
+  const isThinkingPhase = isStreaming && hasThinkingActivity && (!finalText || hasActiveTools);
+  const isGeneratingPhase = isStreaming && finalText && hasThinkingActivity && !hasActiveTools;
   const isComplete = !isStreaming;
+
+  // FIX: Auto-expand Task section when actively thinking or generating
+  const shouldAutoExpand = Boolean(isThinkingPhase || isGeneratingPhase);
+
 
   return (
     <div className="message-enter">
@@ -254,7 +260,7 @@ export const MessageItem = memo(function MessageItem({ message, isStreaming = fa
           {/* Thinking Section - Task-based workflow with aesthetics */}
           {hasThinkingActivity && (
             <div className="not-prose mb-4 rounded-md border border-border bg-card backdrop-blur-sm transition-smooth glow-border">
-              <Task className="w-full" defaultOpen={false}>
+              <Task className="w-full" defaultOpen={shouldAutoExpand}>
                 <CollapsibleTrigger className="flex w-full items-center gap-2 sm:gap-3 text-muted-foreground text-sm sm:text-base md:text-lg transition-smooth hover:text-foreground p-3 sm:p-4 md:p-5">
                   {(isThinkingPhase || isGeneratingPhase) ? (
                     <Loader2 className="size-5 animate-spin pulse-glow" />

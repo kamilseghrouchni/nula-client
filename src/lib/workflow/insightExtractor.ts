@@ -15,10 +15,6 @@ export async function extractInsightFromResponse(
     return null;
   }
 
-  // Debug: Log what we're analyzing
-  console.log(`[Insight Extractor] Analyzing ${responseText.length} chars for phase: ${phase}`);
-  console.log(`[Insight Extractor] First 200 chars:`, responseText.substring(0, 200));
-
   try {
     const { text } = await generateText({
       model: anthropic('claude-haiku-4-5'),
@@ -63,12 +59,9 @@ Return ONLY the insight text, nothing else.`,
 
     const insight = text.trim();
 
-    console.log(`[Insight Extractor] Generated insight: "${insight}"`);
-
     // Validate insight length
     if (insight.length > 150) {
       const truncated = insight.substring(0, 147) + '...';
-      console.log(`[Insight Extractor] Truncated to: "${truncated}"`);
       return truncated;
     }
 

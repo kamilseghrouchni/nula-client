@@ -20,7 +20,6 @@ const PLANS_DIR = path.join(process.cwd(), 'data', 'plans');
 function ensurePlansDirectory() {
   if (!fs.existsSync(PLANS_DIR)) {
     fs.mkdirSync(PLANS_DIR, { recursive: true });
-    console.log('[Plan Cache] Created plans directory:', PLANS_DIR);
   }
 }
 
@@ -42,12 +41,6 @@ export function savePlan(plan: CachedPlan): void {
     const filepath = path.join(PLANS_DIR, filename);
 
     fs.writeFileSync(filepath, JSON.stringify(plan, null, 2), 'utf-8');
-
-    console.log('[Plan Cache] Saved plan:', {
-      id: plan.id,
-      sessionId: plan.sessionId,
-      toolsUsed: plan.toolsUsed,
-    });
   } catch (error) {
     console.error('[Plan Cache] Error saving plan:', error);
   }
@@ -80,8 +73,6 @@ export function getPlans(sessionId: string): CachedPlan[] {
 
     // Sort by timestamp (newest first)
     plans.sort((a, b) => b.timestamp - a.timestamp);
-
-    console.log(`[Plan Cache] Loaded ${plans.length} plans for session ${sessionId}`);
 
     return plans;
   } catch (error) {
@@ -117,13 +108,10 @@ export function cleanupOldPlans(sessionId: string, keepCount: number = 10): void
 
       try {
         fs.unlinkSync(filepath);
-        console.log('[Plan Cache] Deleted old plan:', plan.id);
       } catch (error) {
         console.error('[Plan Cache] Error deleting plan:', error);
       }
     }
-
-    console.log(`[Plan Cache] Cleaned up ${plansToDelete.length} old plans for session ${sessionId}`);
   } catch (error) {
     console.error('[Plan Cache] Error during cleanup:', error);
   }

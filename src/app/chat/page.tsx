@@ -1,7 +1,8 @@
 'use client';
 
 import { useChat } from '@ai-sdk/react';
-import { useState, useMemo, useEffect, useRef } from 'react';
+import type { UIMessage } from '@ai-sdk/react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { MessageItem } from '@/components/chat/MessageItem';
 import {
   Conversation,
@@ -12,52 +13,31 @@ import { Suggestion, Suggestions } from '@/components/ai-elements/elements/sugge
 import { suggestions } from '@/lib/data/suggestions';
 import { extractFollowupQuestion } from '@/lib/utils/followup';
 import { extractPlans } from '@/lib/utils/extractPlans';
-import { Send, Loader2, Network, Sparkles, FlaskConical } from 'lucide-react';
+import { Send, Loader2, Network, Sparkles, FlaskConical, BrainIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { RightPanel } from '@/components/RightPanel';
 import { HiddenArtifactPool } from '@/components/artifact/HiddenArtifactPool';
 import { buildWorkflowGraph } from '@/lib/workflow/workflowBuilder';
+import type { WorkflowNode, WorkflowEdge } from '@/lib/types/workflow';
 import dynamic from 'next/dynamic';
 
 // Dynamic import to avoid SSR issues with Three.js
-const Beams = dynamic(() => import('@/components/effects/Beams'), { ssr: false });
+// Uses combined beams for single WebGL context (better performance)
+const CombinedBeams = dynamic(() => import('@/components/effects/CombinedBeams'), { ssr: false });
 
 export default function ChatPage() {
   const [input, setInput] = useState('');
   const [suggestedFollowup, setSuggestedFollowup] = useState<string | null>(null);
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
+
   const { messages, sendMessage, status, error } = useChat();
 
+
   // Ref to store the last complete workflow graph (preserves during streaming)
-  const lastCompleteWorkflowRef = useRef<{ nodes: any[]; edges: any[] }>({ nodes: [], edges: [] });
+  const lastCompleteWorkflowRef = useRef<{ nodes: WorkflowNode[]; edges: WorkflowEdge[] }>({ nodes: [], edges: [] });
 
   // State to hold node insights extracted via LLM (nodeId -> insight)
   const [nodeInsights, setNodeInsights] = useState<Record<string, string>>({});
-
-  // Verify animations CSS is loaded on mount
-  useEffect(() => {
-    console.log('[Chat/Animation] 🎨 Verifying animation CSS is loaded...');
-    const testElement = document.createElement('div');
-    testElement.className = 'animate-fade-in-up glow-border';
-    testElement.style.opacity = '0';
-    document.body.appendChild(testElement);
-
-    // Use setTimeout to ensure styles are computed
-    setTimeout(() => {
-      const computedStyle = window.getComputedStyle(testElement);
-      console.log('[Chat/Animation] Animation property:', computedStyle.animation || 'NONE');
-      console.log('[Chat/Animation] Transition property:', computedStyle.transition || 'NONE');
-      console.log('[Chat/Animation] Box-shadow (glow-border):', computedStyle.boxShadow || 'NONE');
-
-      if (computedStyle.animation && computedStyle.animation !== 'none') {
-        console.log('[Chat/Animation] ✅ CSS animations loaded successfully!');
-      } else {
-        console.error('[Chat/Animation] ❌ CSS animations NOT loaded - animation property is', computedStyle.animation);
-      }
-
-      document.body.removeChild(testElement);
-    }, 100);
-  }, []);
 
   // Extract follow-up question from last assistant message
   useEffect(() => {
@@ -69,15 +49,14 @@ export default function ChatPage() {
       if (lastMessage.role === 'assistant' && lastMessage.parts) {
         // Get all text parts and combine them
         const textParts = lastMessage.parts
-          .filter((part: any) => part.type === 'text')
-          .map((part: any) => part.text || '')
+          .filter((part): part is UIMessage['parts'][number] & { type: 'text' } => part.type === 'text')
+          .map((part) => part.text || '')
           .join('\n');
 
         // Extract follow-up question
         const followup = extractFollowupQuestion(textParts);
 
         if (followup) {
-          console.log('[Followup] Extracted:', followup);
           setSuggestedFollowup(followup);
         } else {
           // Clear if no follow-up found
@@ -95,7 +74,7 @@ export default function ChatPage() {
   );
 
   const artifacts = useMemo(() => {
-    const allArtifacts: any[] = [];
+    const allArtifacts: Array<{ id: string; code: string; createdAt: number; messageId: string }> = [];
     let artifactCounter = 0; // Global counter to ensure unique IDs
 
     // Regex for code blocks in markdown
@@ -106,34 +85,36 @@ export default function ChatPage() {
 
     messages.forEach((message) => {
       if (message.role === 'assistant' && message.parts) {
-        message.parts.forEach((part: any, partIdx: number) => {
+        message.parts.forEach((part, partIdx: number) => {
           if (part.type === 'text') {
             const text = part.text || '';
 
             // Extract from markdown code blocks
             const codeBlockMatches = Array.from(text.matchAll(jsxCodeBlockRegex));
-            codeBlockMatches.forEach((match: any, idx: number) => {
+            codeBlockMatches.forEach((match, idx: number) => {
               allArtifacts.push({
                 id: `artifact-${message.id}-p${partIdx}-cb${idx}-${artifactCounter++}`,
                 code: match[1].trim(),
                 createdAt: 0,
+                messageId: message.id,
               });
             });
 
             // Extract from artifact tags
             const artifactTagMatches = Array.from(text.matchAll(artifactTagRegex));
-            artifactTagMatches.forEach((match: any, idx: number) => {
+            artifactTagMatches.forEach((match, idx: number) => {
               // Content inside <artifact> tags should be JSX code
               const artifactContent = match[1].trim();
               // Check if it contains code blocks, extract them
               const innerCodeMatches = Array.from(artifactContent.matchAll(jsxCodeBlockRegex));
 
               if (innerCodeMatches.length > 0) {
-                innerCodeMatches.forEach((innerMatch: any, innerIdx: number) => {
+                innerCodeMatches.forEach((innerMatch, innerIdx: number) => {
                   allArtifacts.push({
                     id: `artifact-${message.id}-p${partIdx}-tag${idx}-${innerIdx}-${artifactCounter++}`,
                     code: innerMatch[1].trim(),
                     createdAt: 0,
+                    messageId: message.id,
                   });
                 });
               } else {
@@ -142,6 +123,7 @@ export default function ChatPage() {
                   id: `artifact-${message.id}-p${partIdx}-tag${idx}-${artifactCounter++}`,
                   code: artifactContent,
                   createdAt: 0,
+                  messageId: message.id,
                 });
               }
             });
@@ -149,11 +131,6 @@ export default function ChatPage() {
         });
       }
     });
-
-    console.log('[Artifacts] Extracted count:', allArtifacts.length);
-    if (allArtifacts.length > 0) {
-      console.log('[Artifacts] IDs:', allArtifacts.map(a => a.id));
-    }
 
     return allArtifacts;
   }, [messageSignature, messages]);
@@ -166,7 +143,9 @@ export default function ChatPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (status !== 'ready') return;
+    if (status !== 'ready') {
+      return;
+    }
 
     // If input has text, send it
     if (input.trim()) {
@@ -176,7 +155,6 @@ export default function ChatPage() {
     }
     // If input is empty but we have a suggestion, send the suggestion
     else if (suggestedFollowup) {
-      console.log('[Followup] Sending suggested question:', suggestedFollowup);
       sendMessage({ text: suggestedFollowup });
       setSuggestedFollowup(null); // Clear suggestion after sending
     }
@@ -248,15 +226,11 @@ export default function ChatPage() {
   // CRITICAL: Only rebuild workflow when NOT streaming to ensure we capture complete responses
   // If we rebuild during streaming, we'll only get partial text from incomplete messages
   const workflowGraph = useMemo(() => {
-    const timestamp = new Date().toISOString().substring(11, 23);
-
     if (status === 'streaming') {
-      console.log(`⏸️ [${timestamp}] [Workflow/Chat] Skipping rebuild during streaming, using cached graph with ${lastCompleteWorkflowRef.current.nodes.length} nodes`);
       // Return previous graph during streaming to preserve visualization
       return lastCompleteWorkflowRef.current;
     }
 
-    console.log(`🔄 [${timestamp}] [Workflow/Chat] Building graph from ${messages.length} complete messages`);
     const baseGraph = buildWorkflowGraph(messages);
 
     // Enrich nodes with LLM-extracted insights
@@ -277,19 +251,6 @@ export default function ChatPage() {
       })
     };
 
-    console.log(`✅ [${timestamp}] [Workflow/Chat] Built graph with ${enrichedGraph.nodes.length} nodes`);
-    if (enrichedGraph.nodes.length > 0) {
-      const firstNode = enrichedGraph.nodes[0];
-      console.log(`📊 [${timestamp}] [Workflow/Chat] First node sample:`, {
-        id: firstNode.id,
-        phase: firstNode.phase,
-        hasMetadata: !!firstNode.metadata,
-        metadataInsight: firstNode.metadata?.insight,
-        fullResponseLength: firstNode.fullResponse?.length || 0,
-        fullResponsePreview: firstNode.fullResponse?.substring(0, 100)
-      });
-    }
-
     // Cache the enriched graph
     lastCompleteWorkflowRef.current = enrichedGraph;
 
@@ -303,47 +264,34 @@ export default function ChatPage() {
   const hasWorkflow = workflowGraph.nodes.length > 0;
 
   // Extract insights for nodes that don't have them yet (using LLM)
+  // Debounced to prevent rapid API calls
+  const insightExtractionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
-    const extractMissingInsights = async () => {
-      console.log(`🔍 [Insight Extraction] Effect triggered - status: ${status}, nodes: ${workflowGraph.nodes.length}`);
+    // Clear any pending extraction
+    if (insightExtractionTimeoutRef.current) {
+      clearTimeout(insightExtractionTimeoutRef.current);
+    }
 
-      if (status === 'streaming' || workflowGraph.nodes.length === 0) {
-        console.log(`⏸️ [Insight Extraction] Skipping - streaming or no nodes`);
-        return;
-      }
+    if (status === 'streaming' || workflowGraph.nodes.length === 0) {
+      return;
+    }
 
-      // Debug: Log node states
-      workflowGraph.nodes.forEach((node, idx) => {
-        console.log(`📋 [Insight Extraction] Node ${idx}:`, {
-          id: node.id.substring(0, 25),
-          hasMetadataInsight: !!node.metadata?.insight,
-          metadataInsight: node.metadata?.insight?.substring(0, 50),
-          hasStateInsight: !!nodeInsights[node.id],
-          fullResponseLength: node.fullResponse?.length || 0
-        });
-      });
-
-      // Find nodes without insights that have fullResponse text
-      // AND that we haven't already extracted insights for
+    // Debounce insight extraction by 500ms
+    insightExtractionTimeoutRef.current = setTimeout(async () => {
       const nodesNeedingInsights = workflowGraph.nodes.filter(
         node =>
           !node.metadata?.insight &&
-          !nodeInsights[node.id] && // Skip if we already have insight in state
+          !nodeInsights[node.id] &&
           node.fullResponse &&
           node.fullResponse.length > 50
       );
 
-      if (nodesNeedingInsights.length === 0) {
-        console.log(`✋ [Insight Extraction] No nodes need insights - all have either metadata.insight or are in state`);
-        return;
-      }
-
-      console.log(`🤖 [Insight Extraction] Found ${nodesNeedingInsights.length} nodes needing LLM insight extraction`);
+      if (nodesNeedingInsights.length === 0) return;
 
       // Extract insights for each node (in parallel)
       const insightPromises = nodesNeedingInsights.map(async (node) => {
         try {
-          console.log(`🔄 [Insight Extraction] Calling API for node ${node.id.substring(0, 20)}...`);
           const response = await fetch('/api/extract-insight', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -353,41 +301,34 @@ export default function ChatPage() {
             })
           });
 
-          if (!response.ok) {
-            console.error(`❌ [Insight Extraction] Failed to extract insight for node ${node.id}`);
-            return null;
-          }
+          if (!response.ok) return null;
 
           const { insight } = await response.json();
-          console.log(`✅ [Insight Extraction] Extracted for node ${node.id.substring(0, 20)}: "${insight}"`);
-
           return { nodeId: node.id, insight };
-        } catch (error) {
-          console.error(`❌ [Insight Extraction] Error extracting insight for node ${node.id}:`, error);
+        } catch {
           return null;
         }
       });
 
       const results = await Promise.all(insightPromises);
 
-      // Add extracted insights to state
-      // This will trigger a re-render and the useMemo will merge them into the graph
       setNodeInsights(prev => {
         const newInsights = { ...prev };
-        let addedCount = 0;
         results.forEach(result => {
           if (result?.nodeId && result.insight) {
             newInsights[result.nodeId] = result.insight;
-            addedCount++;
           }
         });
-        console.log(`📝 [Insight Extraction] Added ${addedCount} insights to state`);
         return newInsights;
       });
-    };
+    }, 500);
 
-    extractMissingInsights();
-  }, [workflowGraph.nodes.length, status]); // Run when graph changes and not streaming
+    return () => {
+      if (insightExtractionTimeoutRef.current) {
+        clearTimeout(insightExtractionTimeoutRef.current);
+      }
+    };
+  }, [workflowGraph.nodes.length, status, nodeInsights]);
 
   // Show right panel if either artifacts, plans, or workflow exists AND user wants it open
   const showRightPanel = (hasArtifacts || hasPlans || hasWorkflow) && rightPanelOpen;
@@ -422,47 +363,9 @@ export default function ChatPage() {
       {messages.length === 0 ? (
         // Welcome Screen - Full Page with 3D Animated Beams
         <div className="w-full h-full flex items-center justify-center relative overflow-hidden">
-          {/* 3D Animated Beams Background - Multiple colors */}
+          {/* 3D Animated Beams Background - Combined for single WebGL context */}
           <div className="absolute inset-0 pointer-events-none">
-            {/* Cyan beams */}
-            <div className="absolute inset-0 opacity-60">
-              <Beams
-                beamNumber={10}
-                beamWidth={2.5}
-                beamHeight={15}
-                lightColor="#06D6DB"
-                speed={2}
-                noiseIntensity={1.2}
-                scale={0.2}
-                rotation={-10}
-              />
-            </div>
-            {/* Purple beams */}
-            <div className="absolute inset-0 opacity-50">
-              <Beams
-                beamNumber={8}
-                beamWidth={2.5}
-                beamHeight={15}
-                lightColor="#6B3FA0"
-                speed={1.5}
-                noiseIntensity={1.0}
-                scale={0.18}
-                rotation={5}
-              />
-            </div>
-            {/* Pink beams */}
-            <div className="absolute inset-0 opacity-45">
-              <Beams
-                beamNumber={8}
-                beamWidth={2.5}
-                beamHeight={15}
-                lightColor="#E74C97"
-                speed={1.8}
-                noiseIntensity={1.1}
-                scale={0.22}
-                rotation={15}
-              />
-            </div>
+            <CombinedBeams />
           </div>
 
           {/* Particle stars effect overlay */}
@@ -491,12 +394,12 @@ export default function ChatPage() {
             }}>
               Zero-Shot Bioanalysis Agents
             </p>
-            <p className="text-base sm:text-lg text-muted-foreground/80 mb-12 animate-fade-in-up stagger-2 max-w-3xl mx-auto">
+            <p className="text-base sm:text-lg text-muted-foreground/80 mb-8 animate-fade-in-up stagger-2 max-w-3xl mx-auto">
               Empowering generalist AI models to perform specialist bioanalysis through curated MCP tools
             </p>
 
             {/* Centered Input */}
-            <form onSubmit={handleSubmit} className="max-w-4xl mx-auto animate-fade-in-up stagger-2">
+            <form onSubmit={handleSubmit} className="max-w-4xl mx-auto animate-fade-in-up stagger-3">
               <div className="flex gap-3 sm:gap-4">
                 <div className="relative flex-1">
                   {/* Gradient border wrapper */}
@@ -532,7 +435,7 @@ export default function ChatPage() {
                     boxShadow: '0 0 20px rgba(6, 214, 219, 0.4), 0 0 40px rgba(231, 76, 151, 0.3)'
                   }}
                 >
-                  {status === 'streaming' ? (
+                  {(status === 'submitted' || status === 'streaming') ? (
                     <Loader2 className="w-6 h-6 animate-spin pulse-glow" />
                   ) : (
                     <Send className="w-6 h-6" />
@@ -542,7 +445,7 @@ export default function ChatPage() {
             </form>
 
             {/* Suggestion Chips */}
-            <div className="max-w-4xl mx-auto mt-6 sm:mt-8 animate-fade-in-up stagger-3">
+            <div className="max-w-4xl mx-auto mt-6 sm:mt-8 animate-fade-in-up stagger-4">
               <Suggestions>
                 {suggestions.map((suggestion) => (
                   <Suggestion
@@ -570,20 +473,23 @@ export default function ChatPage() {
           {/* Header */}
           <div className="bg-card/80 backdrop-blur-sm border-b border-border px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-5 flex-shrink-0 relative z-10">
             <div className={`flex items-center justify-between ${showRightPanel ? '' : 'max-w-7xl mx-auto'}`}>
-              <div>
-                <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
-                  <span className="inline-block w-2 h-2 sm:w-2.5 sm:h-2.5 bg-primary rounded-full" />
-                  Nula Labs
-                </h1>
-                <p className="text-xs sm:text-sm font-medium mt-1" style={{
-                  background: 'linear-gradient(135deg, #06D6DB 0%, #E74C97 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                }}>
-                  Zero-Shot Bioanalysis Agents
-                </p>
+              <div className="flex items-center gap-4">
+                <div>
+                  <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
+                    <span className="inline-block w-2 h-2 sm:w-2.5 sm:h-2.5 bg-primary rounded-full" />
+                    Nula Labs
+                  </h1>
+                  <p className="text-xs sm:text-sm font-medium mt-1" style={{
+                    background: 'linear-gradient(135deg, #06D6DB 0%, #E74C97 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                  }}>
+                    Zero-Shot Bioanalysis Agents
+                  </p>
+                </div>
               </div>
+
               <div className="flex gap-2">
                 {hasPlans && (
                   <Button
@@ -640,6 +546,35 @@ export default function ChatPage() {
                 />
               ))}
 
+              {/* Immediate "Thinking" indicator during request processing (submitted = waiting for stream, streaming = active stream) */}
+              {(() => {
+                // FIX: Show indicator during streaming OR when there's no assistant message yet
+                const isActivelyStreaming = status === 'submitted' || status === 'streaming';
+                const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
+                const hasAssistantResponse = messages.some(m => m.role === 'assistant' && (m.parts?.length > 0));
+
+                // Show if: streaming AND (no assistant message yet OR last message is from user)
+                const showIndicator = isActivelyStreaming && (!hasAssistantResponse || lastMessage?.role === 'user');
+
+                return showIndicator;
+              })() && (
+                <div className="message-enter">
+                  <div className="flex gap-3 sm:gap-4">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                      <BrainIcon className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+                    </div>
+                    <div className="flex-1 rounded-lg border border-border bg-card/50 backdrop-blur-sm p-4">
+                      <div className="flex items-center gap-3 text-muted-foreground">
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span className="text-sm font-medium">
+                          {status === 'submitted' ? 'Connecting to analysis tools...' : 'Thinking...'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {error && (
                 <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 text-destructive">
                   <p className="font-semibold">Error</p>
@@ -694,10 +629,10 @@ export default function ChatPage() {
                   size="lg"
                   className="gap-2 interactive-scale transition-smooth"
                 >
-                  {status === 'streaming' ? (
+                  {(status === 'submitted' || status === 'streaming') ? (
                     <>
                       <Loader2 className="w-6 h-6 animate-spin pulse-glow" />
-                      <span>Sending...</span>
+                      <span>{status === 'submitted' ? 'Connecting...' : 'Streaming...'}</span>
                     </>
                   ) : (
                     <>

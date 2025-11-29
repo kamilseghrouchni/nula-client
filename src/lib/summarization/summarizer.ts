@@ -28,8 +28,6 @@ export async function summarizeOlderMessages(
   const olderMessages = messages.slice(0, -keepRecent);
   const recentMessages = messages.slice(-keepRecent);
 
-  console.log(`[Summarizer] Summarizing ${olderMessages.length} messages, keeping ${recentMessages.length} recent`);
-
   // Build conversation text for summarization
   const conversationText = olderMessages
     .map((msg) => {
@@ -82,8 +80,6 @@ ${conversationText}
 
 Summary:`,
     });
-
-    console.log(`[Summarizer] Generated summary (${summary.length} chars)`);
 
     return {
       summaryText: summary.trim(),

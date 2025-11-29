@@ -12,7 +12,7 @@ type Tab = "workflow" | "notebook" | "plans";
 
 interface RightPanelProps {
   messages: UIMessage[];
-  artifacts: any[];
+  artifacts: Array<{ id: string; code: string; createdAt: number; messageId: string }>;
   plans: Plan[];
   hasWorkflow: boolean;
   hasArtifacts: boolean;

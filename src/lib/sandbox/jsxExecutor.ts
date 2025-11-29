@@ -78,6 +78,7 @@ export function executeJSX(code: string, props: any = {}) {
     'PieChart', 'Pie', 'Cell', 'Area', 'AreaChart', 'ComposedChart',
     'RadarChart', 'Radar', 'RadialBarChart', 'RadialBar', 'PolarGrid', 'PolarAngleAxis', 'PolarRadiusAxis',
     'ReferenceLine', 'ReferenceArea', 'ReferenceDot', 'Label', 'LabelList',
+    'Treemap', 'Sankey', 'Funnel', 'FunnelChart',
     wrappedCode
   );
 
@@ -98,7 +99,8 @@ export function executeJSX(code: string, props: any = {}) {
       recharts.RadarChart, recharts.Radar, recharts.RadialBarChart, recharts.RadialBar,
       recharts.PolarGrid, recharts.PolarAngleAxis, recharts.PolarRadiusAxis,
       recharts.ReferenceLine, recharts.ReferenceArea, recharts.ReferenceDot,
-      recharts.Label, recharts.LabelList
+      recharts.Label, recharts.LabelList,
+      recharts.Treemap, recharts.Sankey, recharts.Funnel, recharts.FunnelChart
     );
     return result;
   } catch (execError: any) {
@@ -120,6 +122,7 @@ export function executeJSX(code: string, props: any = {}) {
           `- ComposedChart\n` +
           `- RadarChart, Radar\n` +
           `- RadialBarChart, RadialBar\n` +
+          `- Treemap, Sankey, Funnel, FunnelChart\n` +
           `- XAxis, YAxis, CartesianGrid, Tooltip, Legend\n` +
           `- ResponsiveContainer, Cell\n` +
           `- ReferenceLine, ReferenceArea, ReferenceDot\n` +

@@ -1,28 +1,40 @@
 'use client';
 
-import { useEffect, useState, memo } from 'react';
+import React, { useEffect, useState, memo } from 'react';
 import { executeJSX } from '@/lib/sandbox/jsxExecutor';
 import { AlertCircle } from 'lucide-react';
 
 interface ArtifactRendererProps {
   code: string;
-  data?: any;
+  data?: unknown;
   artifactId?: string;
 }
 
+type ReactComponent = () => React.JSX.Element;
+
 const ArtifactRendererComponent = ({ code, data, artifactId }: ArtifactRendererProps) => {
-  const [Component, setComponent] = useState<any>(null);
+  const [Component, setComponent] = useState<ReactComponent | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
+
     try {
       const ExecutedComponent = executeJSX(code, data);
-      setComponent(() => ExecutedComponent);
-      setError(null);
+      if (isMounted) {
+        setComponent(() => ExecutedComponent);
+        setError(null);
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to render artifact');
-      console.error('Artifact execution error:', err);
+      if (isMounted) {
+        setError(err instanceof Error ? err.message : 'Failed to render artifact');
+        console.error('Artifact execution error:', err);
+      }
     }
+
+    return () => {
+      isMounted = false;
+    };
   }, [code, data]);
 
   if (error) {
@@ -63,8 +75,5 @@ export const ArtifactRenderer = memo(ArtifactRendererComponent, (prevProps, next
   // Return true if props are equal (should NOT re-render)
   // Return false if props changed (should re-render)
   const areEqual = prevProps.code === nextProps.code && prevProps.data === nextProps.data;
-  if (!areEqual) {
-    console.log('[ArtifactRenderer] Props changed, will re-render');
-  }
   return areEqual;
 });

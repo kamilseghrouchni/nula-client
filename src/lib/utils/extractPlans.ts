@@ -81,10 +81,5 @@ export function extractPlans(messages: UIMessage[]): Plan[] {
     }
   });
 
-  console.log('[Plans] Extracted count:', allPlans.length);
-  if (allPlans.length > 0) {
-    console.log('[Plans] Titles:', allPlans.map(p => p.title));
-  }
-
   return allPlans;
 }

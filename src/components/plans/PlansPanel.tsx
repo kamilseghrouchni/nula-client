@@ -32,9 +32,7 @@ export function PlansPanel({ plans, onClose, onBuild }: PlansPanelProps) {
   };
 
   const handleClear = (planId: string) => {
-    // Clear functionality - for now just log it
-    // This could be expanded to clear the plan from state
-    console.log('[Plans] Clear plan:', planId);
+    // Clear functionality - could be expanded to clear the plan from state
   };
 
   const isEmpty = plans.length === 0;
@@ -50,7 +48,6 @@ export function PlansPanel({ plans, onClose, onBuild }: PlansPanelProps) {
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
         e.preventDefault();
         const latestPlan = plans[plans.length - 1];
-        console.log('[PlansPanel] Cmd+Enter triggered for plan:', latestPlan.id);
         handleBuild(latestPlan.id);
       }
     };

@@ -37,8 +37,6 @@ export async function listAllPrompts(
 
   for (const [serverName, session] of Object.entries(sessions)) {
     try {
-      console.log(`[PromptManager] Listing prompts from server: ${serverName}`);
-
       // List prompts from this server
       const result = await session.connector.listPrompts();
 
@@ -51,8 +49,6 @@ export async function listAllPrompts(
           arguments: prompt.arguments
         });
       }
-
-      console.log(`[PromptManager] Found ${result.prompts.length} prompts from ${serverName}`);
     } catch (error) {
       console.error(`[PromptManager] Failed to list prompts from ${serverName}:`, error);
       // Continue with other servers
@@ -84,8 +80,6 @@ export async function getPrompt(
     content: string;
   }>;
 }> {
-  console.log(`[PromptManager] Getting prompt: ${promptName} with args:`, args);
-
   const result = await session.connector.getPrompt(promptName, args);
 
   // Convert MCP prompt messages to our format
@@ -185,11 +179,8 @@ export async function fetchPromptWithVisibility(
       prompt
     );
     parts.push(completePart);
-
-    console.log(`[PromptManager] ✅ Fetched prompt: ${promptName}`);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error(`[PromptManager] ❌ Failed to fetch prompt ${promptName}:`, errorMessage);
 
     // Create error part
     const errorPart = createPromptFetchPart(
