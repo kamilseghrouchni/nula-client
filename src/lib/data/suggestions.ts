@@ -4,9 +4,9 @@
  */
 
 export const suggestions = [
-  "Analyze analytical variability and quality metrics in my LC-MS data",
-  "Assess standard stability and reproducibility across runs",
-  "Evaluate batch effects and systematic variation patterns",
+  "What are the top druggable pathways in longevity research?",
+  "Tell me everything you know about TP53",
+  "What are the latest compounds targeting EGFR?",
 ] as const;
 
 export type SuggestionQuery = typeof suggestions[number];
