@@ -80,11 +80,12 @@ Query EEG data → Statistical analysis → Publication-ready charts
 
 **Get all 230+ tools running in 3 steps:**
 
-### 1. Run the MCP Hub
+### 1. Build and Run the MCP Hub
 ```bash
-docker run -p 9000:9000 ghcr.io/biocontext-ai/mcp-hub
+cd mcp-hub
+docker build -t mcp-hub .
+docker run -p 9000:9000 mcp-hub
 ```
-*Note: Pre-built image coming soon. For now, see [Build Locally](#build-mcp-hub-locally-optional) below.*
 
 ### 2. Run NulaLabs
 ```bash
@@ -270,17 +271,14 @@ No configuration. No manual server setup.
 
 ---
 
-## Build MCP Hub Locally (Optional)
+## MCP Hub Details
 
-Using the pre-built Docker image? Skip this section.
+After running the MCP Hub, verify it's working:
 
 ```bash
-cd mcp-hub
-docker build -t mcp-hub .
-docker run -p 9000:9000 mcp-hub
-
-# Verify
+# Check the SSE endpoint
 curl http://localhost:9000/sse
+# Should return: event: endpoint, data: /messages/?session_id=...
 ```
 
 **How it works**:
