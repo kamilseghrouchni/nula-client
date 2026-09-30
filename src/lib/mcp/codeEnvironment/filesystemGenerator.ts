@@ -89,13 +89,12 @@ function generateServerTools(
   const toolNames: string[] = [];
 
   for (const tool of tools) {
-    const fullToolName = tool.name;
-    const shortToolName = getShortToolName(fullToolName);
+    const toolName = tool.name;
     const toolFile = generateToolFile(serverName, tool);
 
-    const filePath = `/workspace/servers/${safeName}/${shortToolName}.ts`;
+    const filePath = `/workspace/servers/${safeName}/${toolName}.ts`;
     files[filePath] = toolFile;
-    toolNames.push(shortToolName);
+    toolNames.push(toolName);
   }
 
   // Generate index.ts that exports all tools
@@ -104,29 +103,6 @@ function generateServerTools(
   return files;
 }
 
-/**
- * Extract short tool name from full MCP tool name
- *
- * Examples:
- *   "biocontext_ai_knowledgebase_mcp_bc_get_uniprot_protein_info" → "bc_get_uniprot_protein_info"
- *   "sviatkh_flybase_mcp_server_get_flybase_gene_summary" → "get_flybase_gene_summary"
- *   "hub_health" → "hub_health" (no prefix)
- */
-function getShortToolName(fullToolName: string): string {
-  // Common MCP naming patterns to strip
-  const prefixes = ['_mcp_', '_mcp_server_', '_server_'];
-
-  for (const prefix of prefixes) {
-    const parts = fullToolName.split(prefix);
-    if (parts.length > 1) {
-      // Return everything after the last occurrence of the prefix
-      return parts[parts.length - 1];
-    }
-  }
-
-  // No prefix found - return full name
-  return fullToolName;
-}
 
 /**
  * Generate JSDoc parameter documentation from JSON schema
@@ -161,30 +137,29 @@ function generateParamDocs(schema: any): string {
  * Generate TypeScript file for a single tool
  */
 function generateToolFile(serverName: string, tool: any): string {
-  const fullToolName = tool.name;
-  const shortToolName = getShortToolName(fullToolName);
-  const description = tool.description || `${shortToolName} from ${serverName}`;
+  const toolName = tool.name;
+  const description = tool.description || `${toolName} from ${serverName}`;
   const inputSchema = tool.inputSchema || {};
 
   // Generate full namespaced tool name for MCP call
-  const mcpToolName = `${serverName}__${fullToolName}`;
+  const mcpToolName = `${serverName}__${toolName}`;
 
   // Generate JSDoc parameter documentation
   const paramDocs = generateParamDocs(inputSchema);
 
   // Generate pure JavaScript CommonJS module (no TypeScript, no ES6 modules)
-  // Use SHORT name for function and export, but FULL name for MCP call
+  // Use exact tool name everywhere - no rewriting
   return `/**
  * ${description}
  *
 ${paramDocs}
  * @returns {Promise<Object>} Tool execution result
  */
-async function ${shortToolName}(input) {
+async function ${toolName}(input) {
   return callMCPTool('${mcpToolName}', input);
 }
 
-module.exports = { ${shortToolName} };
+module.exports = { ${toolName} };
 `;
 }
 

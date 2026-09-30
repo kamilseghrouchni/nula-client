@@ -219,8 +219,34 @@ export async function POST(request: Request) {
 2. **list_servers** - List available MCP servers
 3. **read_tool_definition** - Read a specific tool's interface
 
-❌ **DO NOT** try to call tools like \`bc_get_uniprot_protein_info\` directly - they are NOT available!
+❌ **DO NOT** try to call tools directly - they are NOT available as direct tools!
 ✅ **DO** use \`execute_code\` to import and call them
+
+⚠️ **CRITICAL**: Tool names are LONG (e.g., \`biocontext_ai_knowledgebase_mcp_bc_get_uniprot_protein_info\`)
+- ALWAYS use \`read_tool_definition\` first to get the exact name
+- NEVER abbreviate or shorten tool names in imports
+- Use the EXACT name shown in the tool definition
+
+### Code Execution Rules (CRITICAL)
+
+⚠️ **DO NOT wrap code in async functions** - write code directly with top-level await!
+
+This pattern is from Anthropic's official MCP documentation.
+
+❌ **WRONG**:
+\`\`\`typescript
+async function getData() {
+  const result = await tool(...);
+  console.log(result);
+}
+getData(); // Returns undefined!
+\`\`\`
+
+✅ **CORRECT** - Write code directly:
+\`\`\`typescript
+const result = await tool(...);
+console.log(result);
+\`\`\`
 
 ### Available Servers
 
@@ -230,123 +256,174 @@ ${filesystemTree}
 
 ### How to Use MCP Tools (REQUIRED WORKFLOW)
 
-1. **Read tool definition first** (to see parameters):
+1. **Read tool definition first** to get the EXACT tool name and parameters:
    \`\`\`typescript
    read_tool_definition({
      server_name: "biocontext_hub",
-     tool_name: "bc_get_uniprot_protein_info"
+     tool_name: "biocontext_ai_knowledgebase_mcp_bc_get_uniprot_protein_info"
    })
    \`\`\`
 
-2. **Write code** using static imports:
+   ⚠️ **CRITICAL**: The tool definition shows the EXACT tool name you must use in imports!
+
+2. **Write code** using the EXACT tool name from step 1:
    \`\`\`typescript
    execute_code({
      code: \`
-       import { bc_get_uniprot_protein_info } from './servers/biocontext_hub/bc_get_uniprot_protein_info';
+       import { biocontext_ai_knowledgebase_mcp_bc_get_uniprot_protein_info } from './servers/biocontext_hub/biocontext_ai_knowledgebase_mcp_bc_get_uniprot_protein_info';
 
-       const result = await bc_get_uniprot_protein_info({
-         protein_symbol: "TP53"  // Use exact parameter names from tool definition!
+       // Direct top-level await - no function wrapping!
+       const result = await biocontext_ai_knowledgebase_mcp_bc_get_uniprot_protein_info({
+         gene_symbol: "TP53"
        });
 
-       // ⚠️ CRITICAL: Filter large results to avoid context overflow!
-       console.log(JSON.stringify({
-         id: result.uniProtkbId,
+       // Filter results to avoid context overflow
+       console.log({
+         id: result.primaryAccession,
          organism: result.organism?.scientificName,
-         primaryAccession: result.primaryAccession
-       }, null, 2));
+         name: result.proteinDescription?.recommendedName?.fullName?.value
+       });
      \`
    })
    \`\`\`
 
 ### ❌ Common Mistakes to AVOID
 
-1. **Calling tools directly**:
+1. **Wrapping code in async functions**:
    \`\`\`typescript
-   // ❌ WRONG - This will fail!
-   bc_get_uniprot_protein_info({ protein_symbol: "TP53" })
+   // ❌ WRONG - Returns undefined!
+   async function processGene() {
+     const result = await tool(...);
+     console.log(result);
+   }
+   processGene(); // NOT AWAITED - outer code completes first!
    \`\`\`
 
-2. **Using dynamic imports**:
+2. **Not logging results**:
    \`\`\`typescript
-   // ❌ WRONG - Use static imports instead
-   const { tool } = await import('./servers/...');
+   // ❌ WRONG
+   const result = await tool(...);
+   // Forgot console.log - returns undefined!
+
+   // ✅ CORRECT
+   const result = await tool(...);
+   console.log(result);
    \`\`\`
 
 3. **Logging huge JSON responses**:
    \`\`\`typescript
-   // ❌ WRONG - This can exceed context limits!
+   // ❌ WRONG - Can exceed 100k+ tokens!
    console.log(JSON.stringify(result, null, 2));
 
-   // ✅ CORRECT - Filter to essentials only
+   // ✅ CORRECT - Filter first
    console.log({ id: result.id, name: result.name });
    \`\`\`
 
-4. **Guessing parameter names**:
+4. **Guessing tool names instead of using read_tool_definition**:
    \`\`\`typescript
-   // ❌ WRONG - Always read tool definition first!
-   tool({ gene_symbol: "..." })  // Might be protein_symbol!
+   // ❌ WRONG - Abbreviated name won't work!
+   import { bc_get_protein } from './servers/biocontext_hub/bc_get_protein';
 
-   // ✅ CORRECT - Use exact names from tool definition
-   read_tool_definition(...)  // Check parameters first
+   // ✅ CORRECT - Use exact name from read_tool_definition
+   import { biocontext_ai_knowledgebase_mcp_bc_get_uniprot_protein_info } from './servers/biocontext_hub/biocontext_ai_knowledgebase_mcp_bc_get_uniprot_protein_info';
    \`\`\`
 
-### Code Execution Patterns
+### Code Execution Patterns (from Anthropic MCP Docs)
 
-⚠️ **Your code must LOG results** - use \`console.log()\` or the code returns \`undefined\`!
+⚠️ **Always LOG results** - use \`console.log()\` or code returns \`undefined\`!
 
-✅ **CORRECT: Top-level await with logging** (RECOMMENDED):
+All examples below use **direct top-level await** (Anthropic's recommended pattern):
+
+**Simple tool call**:
 \`\`\`typescript
-import { bc_get_uniprot_protein_info } from './servers/biocontext_hub/bc_get_uniprot_protein_info';
-
-const result = await bc_get_uniprot_protein_info({ protein_symbol: "TP53" });
-
-// Log filtered results
-console.log(JSON.stringify({
-  id: result.uniProtkbId,
-  organism: result.organism?.scientificName
-}, null, 2));
+const info = await tool({ param: 'value' });
+console.log(info.name);
 \`\`\`
 
-❌ **WRONG: Function without calling or logging**:
+**Multiple sequential calls**:
 \`\`\`typescript
-async function getData() {
-  const result = await tool({ ... });
-  return result;  // ← Function defined but NEVER CALLED!
-}
-// Returns: undefined
+const data1 = await tool1({ param: 'value' });
+const data2 = await tool2({ param: data1.result });
+console.log({ data1, data2 });
 \`\`\`
 
-✅ **CORRECT: Function with explicit call**:
+**Loops and iteration**:
 \`\`\`typescript
-async function getData() {
-  const result = await tool({ ... });
-  return result;
+const genes = ['TP53', 'EGFR', 'BRCA1'];
+for (const gene of genes) {
+  const info = await getTool({ gene });
+  console.log(\`\${gene}: \${info.name}\`);
 }
+\`\`\`
 
-const data = await getData();  // ← Call the function!
-console.log(data);  // ← Log the result!
+**Conditional logic**:
+\`\`\`typescript
+const result = await tool1({ param: 'value' });
+if (result.status === 'pending') {
+  const details = await tool2({ id: result.id });
+  console.log('Pending:', details);
+} else {
+  console.log('Complete:', result);
+}
+\`\`\`
+
+**Polling pattern** (from Anthropic docs):
+\`\`\`typescript
+let found = false;
+while (!found) {
+  const messages = await getMessages({ channel: 'C123' });
+  found = messages.some(m => m.text.includes('complete'));
+  if (!found) await new Promise(r => setTimeout(r, 5000));
+}
+console.log('Found the message!');
+\`\`\`
+
+**Error handling**:
+\`\`\`typescript
+try {
+  const data = await tool({ param: 'value' });
+  console.log('Success:', data);
+} catch (error) {
+  console.error('Failed:', error.message);
+}
+\`\`\`
+
+**Data filtering** (context efficiency - from Anthropic docs):
+\`\`\`typescript
+const allRows = await getSheet({ sheetId: 'abc123' });
+const filtered = allRows.filter(row => row.status === 'pending');
+console.log(\`Found \${filtered.length} pending items\`);
+console.log(filtered.slice(0, 5)); // Only log first 5
 \`\`\`
 
 ### Server Discovery Workflow
 
-⚠️ **ALWAYS discover servers first** - don't guess server names!
+⚠️ **ALWAYS discover servers first** - don't guess server names or tool names!
 
 \`\`\`typescript
 // Step 1: List available servers
 list_servers()
 
-// Step 2: Read tool definition to see parameters
+// Step 2: Read tool definition to get EXACT tool name and parameters
 read_tool_definition({
-  server_name: "biocontext_hub",  // ← Use actual server name from step 1
-  tool_name: "bc_get_uniprot_protein_info"
+  server_name: "biocontext_hub",
+  tool_name: "biocontext_ai_knowledgebase_mcp_bc_get_uniprot_protein_info"
 })
 
-// Step 3: Execute code with correct parameters
+// Step 3: Execute code with EXACT tool name from step 2
 execute_code({
   code: \`
-    import { bc_get_uniprot_protein_info } from './servers/biocontext_hub/bc_get_uniprot_protein_info';
-    const result = await bc_get_uniprot_protein_info({ protein_symbol: "TP53" });
-    console.log({ id: result.uniProtkbId });
+    import { biocontext_ai_knowledgebase_mcp_bc_get_uniprot_protein_info } from './servers/biocontext_hub/biocontext_ai_knowledgebase_mcp_bc_get_uniprot_protein_info';
+
+    // Direct top-level await - no function wrapping
+    const result = await biocontext_ai_knowledgebase_mcp_bc_get_uniprot_protein_info({
+      gene_symbol: "TP53"
+    });
+
+    console.log({
+      id: result.primaryAccession,
+      name: result.proteinDescription?.recommendedName?.fullName?.value
+    });
   \`
 })
 \`\`\`
@@ -356,22 +433,23 @@ execute_code({
 MCP tools may return massive JSON objects (100k+ characters). You MUST filter data in code:
 
 \`\`\`typescript
-const result = await bc_get_uniprot_protein_info({ protein_symbol: "TP53" });
+const result = await tool({ param: 'value' });
 
 // Extract only what you need for the user's question
 const summary = {
-  proteinId: result.uniProtkbId,
+  id: result.primaryAccession,
   organism: result.organism?.scientificName,
-  entryType: result.entryType,
+  name: result.proteinDescription?.recommendedName?.fullName?.value
   // Add only fields relevant to user's query
 };
 
-console.log(JSON.stringify(summary, null, 2));
+console.log(summary); // Clean, filtered output
 \`\`\`
 
 ### Technical Notes
 
 - All code runs in a secure sandbox (5 second timeout, 512MB memory limit)
+- **Write code with direct top-level await** - DO NOT wrap in async functions
 - Use static imports: \`import { X } from './servers/Y/X'\`
 - **MUST use console.log()** - only logged data returns to you
 - Import paths are relative: \`./servers/{server_name}/{tool_name}\`

@@ -117,6 +117,11 @@ ${codeWithRequires}
     // Execute with timeout
     const result = await executeWithTimeout(wrappedCode, context, 5000);
 
+    // Wait for all pending promises/async operations to complete
+    // This ensures console.log from async functions gets captured before we return
+    // Use a longer delay to ensure MCP tool calls have time to complete
+    await new Promise(resolve => setTimeout(resolve, 100));
+
     return {
       success: true,
       output: outputLines.join('\n'),
