@@ -4,6 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:5512": "NEXT_PRIVATE_BUILD_DIR=.next-5512 next dev -p 5512",
+    "dev:3002": "next dev -p 3002",
+    "dev:3003": "next dev -p 3003",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
